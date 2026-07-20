@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getMediaAsset } from '../../lib/firestore/media'
+import { useHeroOverlay } from '../../lib/heroOverlay'
 import type { Hero, MediaAsset } from '../../types/models'
 
 function CtaButton({ label, link, primary }: { label: string; link: string; primary: boolean }) {
@@ -22,6 +23,12 @@ function CtaButton({ label, link, primary }: { label: string; link: string; prim
 
 export default function HeroBlock({ hero }: { hero: Hero | null }) {
   const [image, setImage] = useState<MediaAsset | null>(null)
+  const { setHasHero } = useHeroOverlay()
+
+  // Renders whenever there's a headline or an image — matches the fallback
+  // rule from the CMS spec: no image still shows the solid brand-colour
+  // section below, which is dark enough for the header to overlay on too.
+  const shouldRender = !!hero && !!(hero.headline || hero.imageId)
 
   useEffect(() => {
     if (hero?.imageId) {
@@ -31,12 +38,17 @@ export default function HeroBlock({ hero }: { hero: Hero | null }) {
     }
   }, [hero?.imageId])
 
-  if (!hero || (!hero.headline && !hero.imageId)) return null
+  useEffect(() => {
+    setHasHero(shouldRender)
+    return () => setHasHero(false)
+  }, [shouldRender, setHasHero])
+
+  if (!shouldRender) return null
 
   const objectPosition = hero.focalPoint ? `${hero.focalPoint.x}% ${hero.focalPoint.y}%` : 'center'
 
   return (
-    <section className="relative flex min-h-[420px] items-end overflow-hidden bg-teal-900 text-sand-50">
+    <section className="relative flex min-h-[480px] items-end overflow-hidden bg-teal-900 text-sand-50">
       {image && (
         <img
           src={image.fileUrl}
@@ -46,7 +58,7 @@ export default function HeroBlock({ hero }: { hero: Hero | null }) {
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-teal-950/90 via-teal-950/40 to-transparent" />
-      <div className="relative mx-auto w-full max-w-6xl px-6 py-16">
+      <div className="relative mx-auto w-full max-w-6xl px-6 pb-16 pt-28">
         {hero.eyebrowText && (
           <p className="text-sm uppercase tracking-wide text-ochre-500">{hero.eyebrowText}</p>
         )}
