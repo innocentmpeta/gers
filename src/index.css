@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/*
+  Design tokens per project-docs/GERS_Functional_Requirements.docx §3.6:
+  earth/water base palette, one confident accent, editorial display face
+  paired with a clean sans body. Swap these for UJ's brand values once
+  the brand identity deliverable lands — nothing downstream should need
+  to change, only these values.
+*/
+@theme {
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --color-teal-950: #0d1a18;
+  --color-teal-900: #14302c;
+  --color-teal-800: #1f3d3a;
+  --color-teal-700: #2b504b;
+  --color-teal-600: #3a655f;
+
+  --color-slate-700: #3f4b52;
+  --color-slate-500: #6b7780;
+  --color-slate-300: #a7b0b6;
+
+  --color-sand-50: #faf7f0;
+  --color-sand-100: #f4ede0;
+  --color-sand-200: #e9ddc4;
+
+  --color-ochre-500: #c97a2b;
+  --color-ochre-600: #a8621f;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color: var(--color-teal-950);
+    background: var(--color-sand-50);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    color: var(--color-teal-900);
+  }
+
+  a {
+    color: inherit;
+  }
+}
