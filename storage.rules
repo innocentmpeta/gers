@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Two buckets of files: public media (galleries, hero images, attachments —
+// mirrors the mediaAssets collection, which is publicly readable) and the
+// knowledge-base store (admin-only, feeds the FAQ bot server-side).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function role() {
+      return isSignedIn()
+        ? firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.systemRole
+        : null;
+    }
+
+    function isAnyAdmin() {
+      return role() == 'super_admin' || role() == 'organiser' || role() == 'content_manager';
+    }
+
+    function isCMSAdmin() {
+      return role() == 'super_admin' || role() == 'content_manager';
+    }
+
+    match /media/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAnyAdmin();
+    }
+
+    match /knowledge-base/{allPaths=**} {
+      allow read, write: if isCMSAdmin();
+    }
+  }
+}

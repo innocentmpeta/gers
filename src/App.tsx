@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
+import { AuthProvider } from './lib/auth'
 import PublicLayout from './routes/PublicLayout'
 import AdminLayout from './routes/AdminLayout'
+import RequireAuth from './routes/RequireAuth'
+import RequireRole from './routes/RequireRole'
 
 import Home from './features/public/pages/Home'
 import About from './features/public/pages/About'
@@ -14,6 +17,8 @@ import PastSymposiums from './features/public/pages/PastSymposiums'
 import Faq from './features/public/pages/Faq'
 import RegisterIntro from './features/public/pages/RegisterIntro'
 import AccountHome from './features/account/pages/AccountHome'
+import Login from './features/auth/pages/Login'
+import Signup from './features/auth/pages/Signup'
 
 import AdminDashboard from './features/admin/pages/Dashboard'
 import AdminContent from './features/admin/pages/Content'
@@ -24,32 +29,41 @@ import AdminAccounts from './features/admin/pages/Accounts'
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<PublicLayout />}>
-          <Route index element={<Home />} />
-          <Route path="about" element={<About />} />
-          <Route path="event-overview" element={<EventOverview />} />
-          <Route path="programme" element={<Programme />} />
-          <Route path="speakers" element={<Speakers />} />
-          <Route path="exhibition" element={<Exhibition />} />
-          <Route path="student-track" element={<StudentTrack />} />
-          <Route path="past-symposiums" element={<PastSymposiums />} />
-          <Route path="faq" element={<Faq />} />
-          <Route path="register" element={<RegisterIntro />} />
-          <Route path="account" element={<AccountHome />} />
-        </Route>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route index element={<Home />} />
+            <Route path="about" element={<About />} />
+            <Route path="event-overview" element={<EventOverview />} />
+            <Route path="programme" element={<Programme />} />
+            <Route path="speakers" element={<Speakers />} />
+            <Route path="exhibition" element={<Exhibition />} />
+            <Route path="student-track" element={<StudentTrack />} />
+            <Route path="past-symposiums" element={<PastSymposiums />} />
+            <Route path="faq" element={<Faq />} />
+            <Route path="register" element={<RegisterIntro />} />
+            <Route path="login" element={<Login />} />
+            <Route path="signup" element={<Signup />} />
 
-        <Route path="admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="content" element={<AdminContent />} />
-          <Route path="registrations" element={<AdminRegistrations />} />
-          <Route path="prompts" element={<AdminPrompts />} />
-          <Route path="export" element={<AdminExport />} />
-          <Route path="accounts" element={<AdminAccounts />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+            <Route element={<RequireAuth />}>
+              <Route path="account" element={<AccountHome />} />
+            </Route>
+          </Route>
+
+          <Route path="admin" element={<RequireRole />}>
+            <Route element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="content" element={<AdminContent />} />
+              <Route path="registrations" element={<AdminRegistrations />} />
+              <Route path="prompts" element={<AdminPrompts />} />
+              <Route path="export" element={<AdminExport />} />
+              <Route path="accounts" element={<AdminAccounts />} />
+            </Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
 

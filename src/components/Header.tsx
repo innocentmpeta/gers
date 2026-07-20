@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import clsx from 'clsx'
+import { useAuth } from '../lib/auth'
 
 const NAV_ITEMS = [
   { to: '/about', label: 'About' },
@@ -13,6 +14,8 @@ const NAV_ITEMS = [
 ]
 
 export default function Header() {
+  const { firebaseUser } = useAuth()
+
   return (
     <header className="border-b border-sand-200 bg-sand-50/95 backdrop-blur sticky top-0 z-40">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
@@ -39,10 +42,10 @@ export default function Header() {
 
         <div className="flex items-center gap-3 shrink-0">
           <NavLink
-            to="/account"
+            to={firebaseUser ? '/account' : '/login'}
             className="hidden sm:inline-flex items-center rounded-full border border-teal-800 px-3 py-1.5 text-sm text-teal-800 hover:bg-teal-800 hover:text-sand-50 transition-colors"
           >
-            My Account
+            {firebaseUser ? 'My Account' : 'Log In'}
           </NavLink>
           <NavLink
             to="/register"

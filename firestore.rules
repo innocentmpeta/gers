@@ -1,0 +1,200 @@
+rules_version = '2';
+
+// Mirrors project-docs/GERS_Functional_Requirements.docx §9 (role matrix) and
+// project-docs/GERS_Technical_Data_Model.docx (entities). Fine-grained profile
+// visibility scoping (all_attendees / same_role_only / organisers_only) is only
+// partially expressible here — directory queries additionally filter client-side
+// per the showInDirectory/visibilityScope fields; these rules guarantee the floor
+// (owner + admin access, and that non-directory profiles are never readable by
+// other attendees), not the full nuance of scope-based filtering.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function role() {
+      return isSignedIn()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.systemRole
+        : null;
+    }
+
+    function isSuperAdmin() { return role() == 'super_admin'; }
+    function isOrganiser() { return role() == 'organiser'; }
+    function isContentManager() { return role() == 'content_manager'; }
+    function isAnyAdmin() { return isSuperAdmin() || isOrganiser() || isContentManager(); }
+
+    // Capability groups, per the role matrix.
+    function canCMS() { return isSuperAdmin() || isContentManager(); }
+    function canPrompts() { return isSuperAdmin() || isOrganiser() || isContentManager(); }
+    function canRegistrations() { return isSuperAdmin() || isOrganiser(); }
+    function canAccounts() { return isSuperAdmin(); }
+
+    function onlyChangedKeys(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // ---- users ----
+    match /users/{userId} {
+      allow read: if isOwner(userId)
+        || canAccounts()
+        || canRegistrations()
+        || resource.data.showInDirectory == true;
+      allow create: if isOwner(userId) && request.resource.data.systemRole == null;
+      allow update: if canAccounts()
+        || (isOwner(userId) && onlyChangedKeys([
+              'name', 'phone', 'whatsappNumber',
+              'showInDirectory', 'showWhatsapp', 'showEmail', 'visibilityScope'
+            ]));
+      allow delete: if canAccounts();
+    }
+
+    // ---- symposia ----
+    match /symposia/{symposiumId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // ---- registrations ----
+    match /registrations/{registrationId} {
+      allow read: if isOwner(resource.data.userId) || canRegistrations();
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending_approval'
+        && request.resource.data.confirmed == false;
+      allow update: if canRegistrations()
+        || (isOwner(resource.data.userId) && onlyChangedKeys([
+              'attendanceMode', 'mealPreference', 'confirmed', 'confirmedAt', 'updatedAt'
+            ]));
+      allow delete: if isSuperAdmin();
+    }
+
+    // ---- exhibitorProfiles ----
+    match /exhibitorProfiles/{profileId} {
+      function ownsParentRegistration(regId) {
+        return isSignedIn()
+          && get(/databases/$(database)/documents/registrations/$(regId)).data.userId == request.auth.uid;
+      }
+      allow read: if ownsParentRegistration(resource.data.registrationId) || canRegistrations();
+      allow create: if ownsParentRegistration(request.resource.data.registrationId) || canRegistrations();
+      allow update, delete: if ownsParentRegistration(resource.data.registrationId) || canRegistrations();
+    }
+
+    // ---- boothOptions / sponsorshipTiers (admin-defined catalogues) ----
+    match /boothOptions/{id} {
+      allow read: if true;
+      allow write: if canRegistrations();
+    }
+    match /sponsorshipTiers/{id} {
+      allow read: if true;
+      allow write: if canRegistrations();
+    }
+
+    // ---- abstractSubmissions ----
+    match /abstractSubmissions/{submissionId} {
+      allow read: if isOwner(resource.data.userId) || canRegistrations();
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if canRegistrations()
+        || (isOwner(resource.data.userId)
+            && resource.data.status == 'pending'
+            && request.resource.data.status == 'pending');
+      allow delete: if canRegistrations();
+    }
+
+    // ---- thematicCommunities ----
+    match /thematicCommunities/{id} {
+      allow read: if true;
+      allow write: if canRegistrations();
+    }
+
+    // ---- userCommunityOptIns ----
+    match /userCommunityOptIns/{id} {
+      allow read: if isOwner(resource.data.userId) || canRegistrations();
+      allow create, update, delete: if isOwner(request.resource.data.userId) || canRegistrations();
+    }
+
+    // ---- sessions ----
+    match /sessions/{id} {
+      allow read: if true;
+      allow write: if canRegistrations();
+    }
+
+    // ---- checkIns ----
+    match /checkIns/{id} {
+      allow read: if isOwner(resource.data.userId) || canRegistrations();
+      allow create: if canRegistrations()
+        || (isSignedIn()
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.method == 'online_join');
+      allow update, delete: if canRegistrations();
+    }
+
+    // ---- prompts (polls / session reviews / feedback) ----
+    match /prompts/{id} {
+      allow read: if isSignedIn();
+      allow write: if canPrompts();
+    }
+
+    // ---- promptResponses ----
+    match /promptResponses/{id} {
+      function promptIsAnonymous(promptId) {
+        return get(/databases/$(database)/documents/prompts/$(promptId)).data.isAnonymous == true;
+      }
+      allow read: if canPrompts()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+        && (request.resource.data.userId == request.auth.uid
+            || (request.resource.data.userId == null && promptIsAnonymous(request.resource.data.promptId)));
+      allow update: if false;
+      allow delete: if canPrompts();
+    }
+
+    // ---- sessionQuestions ----
+    match /sessionQuestions/{id} {
+      allow read: if resource.data.status == 'approved'
+        || isOwner(resource.data.userId)
+        || canPrompts();
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.displayText == request.resource.data.submittedText;
+      allow update, delete: if canPrompts();
+    }
+
+    // ---- CMS: pages / sections / items / heroes ----
+    match /pages/{id} {
+      allow read: if true;
+      allow write: if canCMS();
+    }
+    match /sections/{id} {
+      allow read: if true;
+      allow write: if canCMS();
+    }
+    match /items/{id} {
+      allow read: if true;
+      allow write: if canCMS();
+    }
+    match /heroes/{id} {
+      allow read: if true;
+      allow write: if canCMS();
+    }
+
+    // ---- mediaAssets ----
+    match /mediaAssets/{id} {
+      allow read: if true;
+      allow write: if isAnyAdmin();
+    }
+
+    // ---- knowledgeBaseDocuments (bot's raw material — not public) ----
+    match /knowledgeBaseDocuments/{id} {
+      allow read, write: if canCMS();
+    }
+  }
+}
