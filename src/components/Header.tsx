@@ -14,7 +14,7 @@ const NAV_ITEMS = [
 ]
 
 export default function Header() {
-  const { firebaseUser } = useAuth()
+  const { firebaseUser, profile } = useAuth()
 
   return (
     <header className="border-b border-sand-200 bg-sand-50/95 backdrop-blur sticky top-0 z-40">
@@ -41,6 +41,14 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3 shrink-0">
+          {profile?.systemRole && (
+            <NavLink
+              to="/admin"
+              className="hidden sm:inline-flex items-center rounded-full bg-teal-800 px-3 py-1.5 text-sm text-sand-50 hover:bg-teal-700 transition-colors"
+            >
+              Admin
+            </NavLink>
+          )}
           <NavLink
             to={firebaseUser ? '/account' : '/login'}
             className="hidden sm:inline-flex items-center rounded-full border border-teal-800 px-3 py-1.5 text-sm text-teal-800 hover:bg-teal-800 hover:text-sand-50 transition-colors"
