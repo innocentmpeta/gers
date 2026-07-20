@@ -3,17 +3,18 @@ rules_version = '2';
 // Two buckets of files: public media (galleries, hero images, attachments —
 // mirrors the mediaAssets collection, which is publicly readable) and the
 // knowledge-base store (admin-only, feeds the FAQ bot server-side).
+//
+// Role checks use Auth custom claims (request.auth.token.systemRole), not a
+// Firestore lookup — Storage's cross-service firestore.get() proved unreliable
+// in testing (a rule using it denied a verified super_admin; the identical
+// rule with only request.auth != null succeeded). Claims are set alongside
+// the Firestore users/{uid}.systemRole field wherever a role is assigned, so
+// the two stay in sync — see scripts/set-role.js.
 service firebase.storage {
   match /b/{bucket}/o {
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     function role() {
-      return isSignedIn()
-        ? firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.systemRole
-        : null;
+      return request.auth != null ? request.auth.token.systemRole : null;
     }
 
     function isAnyAdmin() {
