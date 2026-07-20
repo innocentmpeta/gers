@@ -19,9 +19,11 @@ import RegisterIntro from './features/public/pages/RegisterIntro'
 import AccountHome from './features/account/pages/AccountHome'
 import Login from './features/auth/pages/Login'
 import Signup from './features/auth/pages/Signup'
+import ItemDetailPage from './features/public/cms/ItemDetailPage'
 
 import AdminDashboard from './features/admin/pages/Dashboard'
 import AdminContent from './features/admin/pages/Content'
+import PageEditor from './features/admin/cms/PageEditor'
 import AdminRegistrations from './features/admin/pages/Registrations'
 import AdminPrompts from './features/admin/pages/Prompts'
 import AdminExport from './features/admin/pages/Export'
@@ -45,6 +47,7 @@ function App() {
             <Route path="register" element={<RegisterIntro />} />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<Signup />} />
+            <Route path="i/:slug" element={<ItemDetailPage />} />
 
             <Route element={<RequireAuth />}>
               <Route path="account" element={<AccountHome />} />
@@ -54,7 +57,10 @@ function App() {
           <Route path="admin" element={<RequireRole />}>
             <Route element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
-              <Route path="content" element={<AdminContent />} />
+              <Route element={<RequireRole capability="cms" />}>
+                <Route path="content" element={<AdminContent />} />
+                <Route path="content/:pageId" element={<PageEditor />} />
+              </Route>
               <Route path="registrations" element={<AdminRegistrations />} />
               <Route path="prompts" element={<AdminPrompts />} />
               <Route path="export" element={<AdminExport />} />

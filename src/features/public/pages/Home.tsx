@@ -1,11 +1,5 @@
-import PagePlaceholder from '../../../components/PagePlaceholder'
+import CmsPage from '../cms/CmsPage'
 
 export default function Home() {
-  return (
-    <PagePlaceholder
-      title="GERS Symposium"
-      phase="Phase 4 builds this page"
-      note="Homepage hero and section content will be rendered here from the CMS."
-    />
-  )
+  return <CmsPage slug="home" />
 }
