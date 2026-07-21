@@ -31,16 +31,28 @@ export async function getById<T>(collectionName: string, id: string): Promise<T 
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as T) : null
 }
 
-// Firestore rejects explicit `undefined` field values (unlike `null`), and our
-// domain types use optional fields (e.g. Item.tag?, Hero.imageId?) that end up
-// as `undefined` when unset. Every write goes through here so callers can pass
-// those types straight through without each one remembering to strip them.
-function omitUndefined<T extends Record<string, unknown>>(data: T): Partial<T> {
-  const result: Partial<T> = {}
-  for (const key in data) {
-    if (data[key] !== undefined) result[key] = data[key]
+// Firestore rejects explicit `undefined` field values (unlike `null`) anywhere
+// in the payload, including nested inside arrays/objects (e.g.
+// HomeContent.exploreCards[].imageId) — a top-level-only strip isn't enough,
+// it just moves the crash one level down. Every write goes through here so
+// callers can pass optional-field-bearing domain types straight through.
+function omitUndefinedDeep(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(omitUndefinedDeep)
   }
-  return result
+  if (value !== null && typeof value === 'object') {
+    const result: Record<string, unknown> = {}
+    for (const key in value as Record<string, unknown>) {
+      const v = (value as Record<string, unknown>)[key]
+      if (v !== undefined) result[key] = omitUndefinedDeep(v)
+    }
+    return result
+  }
+  return value
+}
+
+function omitUndefined<T extends Record<string, unknown>>(data: T): Partial<T> {
+  return omitUndefinedDeep(data) as Partial<T>
 }
 
 export async function createDoc<T extends { id?: string }>(

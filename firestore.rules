@@ -189,6 +189,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if canCMS();
     }
+    match /homeContent/{id} {
+      allow read: if true;
+      allow write: if canCMS();
+    }
 
     // ---- speakers (public-safe profile — never expose Registration itself) ----
     match /speakers/{id} {

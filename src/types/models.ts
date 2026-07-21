@@ -258,6 +258,31 @@ export interface Speaker {
   visible: boolean
 }
 
+// Home's structure is intentionally fixed (Hero -> Intro -> Explore teasers ->
+// Closing CTA) rather than the flexible Section/Item system every other
+// freeform page gets — Content Manager edits the content within each block
+// but can't add/remove blocks, change layout, or reorder. One doc per pageId,
+// upserted the same way Hero is.
+export interface HomeExploreCard {
+  title: string
+  body?: string
+  imageId?: string
+  link: string
+}
+
+export interface HomeContent {
+  id: string
+  pageId: string
+  introHeading?: string
+  introBody?: string
+  introImageId?: string
+  exploreCards: HomeExploreCard[]
+  ctaHeading?: string
+  ctaSubtext?: string
+  ctaButtonLabel?: string
+  ctaButtonLink?: string
+}
+
 // Backs the dedicated FAQ template (an accordion of admin-authored pairs) —
 // deliberately outside the Page/Section/Item system since a Q&A list isn't a
 // card layout. See GERS_Functional_Requirements.docx §2.2.

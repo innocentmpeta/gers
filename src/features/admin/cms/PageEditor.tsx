@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import HeroEditor from '../../../components/cms/HeroEditor'
 import SectionEditor from './SectionEditor'
 import FaqEditor from './FaqEditor'
+import HomeContentEditor from './HomeContentEditor'
 import { getPage } from '../../../lib/firestore/pages'
 import { getHeroForPage } from '../../../lib/firestore/heroes'
 import { listSectionsForPage, createSection, updateSection } from '../../../lib/firestore/sections'
@@ -76,6 +77,8 @@ export default function PageEditor() {
 
       {page.slug === 'faq' ? (
         <FaqEditor />
+      ) : page.slug === 'home' ? (
+        <HomeContentEditor pageId={page.id} />
       ) : editableSections ? (
         <div className="mt-8 flex flex-col gap-5">
           <h2 className="text-xl">Sections</h2>
