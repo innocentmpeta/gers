@@ -48,7 +48,7 @@ export default function HeroBlock({ hero }: { hero: Hero | null }) {
   const objectPosition = hero.focalPoint ? `${hero.focalPoint.x}% ${hero.focalPoint.y}%` : 'center'
 
   return (
-    <section className="relative flex min-h-[480px] items-end overflow-hidden bg-teal-900 text-sand-50">
+    <section className="relative flex min-h-[85vh] items-end overflow-hidden bg-teal-900 text-sand-50">
       {image && (
         <img
           src={image.fileUrl}
@@ -57,7 +57,9 @@ export default function HeroBlock({ hero }: { hero: Hero | null }) {
           style={{ objectPosition }}
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-teal-950/90 via-teal-950/40 to-transparent" />
+      {/* Vignette, not a bottom-only fade: the top needs to stay dark too, since
+          the nav floats transparently over it and needs readable contrast. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-teal-950/70 via-teal-950/25 to-teal-950/90" />
       <div className="relative mx-auto w-full max-w-6xl px-6 pb-16 pt-28">
         {hero.eyebrowText && (
           <p className="text-sm uppercase tracking-wide text-ochre-500">{hero.eyebrowText}</p>
