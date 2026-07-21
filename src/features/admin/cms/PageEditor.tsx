@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import HeroEditor from '../../../components/cms/HeroEditor'
 import SectionEditor from './SectionEditor'
+import FaqEditor from './FaqEditor'
 import { getPage } from '../../../lib/firestore/pages'
 import { getHeroForPage } from '../../../lib/firestore/heroes'
 import { listSectionsForPage, createSection, updateSection } from '../../../lib/firestore/sections'
@@ -73,7 +74,9 @@ export default function PageEditor() {
         <HeroEditor pageId={page.id} hero={hero} onSaved={setHero} />
       </div>
 
-      {editableSections ? (
+      {page.slug === 'faq' ? (
+        <FaqEditor />
+      ) : editableSections ? (
         <div className="mt-8 flex flex-col gap-5">
           <h2 className="text-xl">Sections</h2>
           {sections.map((section, idx) => (

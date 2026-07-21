@@ -24,6 +24,8 @@ import ItemDetailPage from './features/public/cms/ItemDetailPage'
 import AdminDashboard from './features/admin/pages/Dashboard'
 import AdminContent from './features/admin/pages/Content'
 import PageEditor from './features/admin/cms/PageEditor'
+import AdminProgramme from './features/admin/pages/Programme'
+import AdminSpeakers from './features/admin/pages/Speakers'
 import AdminRegistrations from './features/admin/pages/Registrations'
 import AdminPrompts from './features/admin/pages/Prompts'
 import AdminExport from './features/admin/pages/Export'
@@ -61,6 +63,10 @@ function App() {
                 <Route path="content" element={<AdminContent />} />
                 <Route path="content/:pageId" element={<PageEditor />} />
               </Route>
+              <Route element={<RequireRole capability="registrations" />}>
+                <Route path="programme" element={<AdminProgramme />} />
+              </Route>
+              <Route path="speakers" element={<AdminSpeakers />} />
               <Route path="registrations" element={<AdminRegistrations />} />
               <Route path="prompts" element={<AdminPrompts />} />
               <Route path="export" element={<AdminExport />} />

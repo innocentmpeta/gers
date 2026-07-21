@@ -238,3 +238,30 @@ export interface KnowledgeBaseDocument {
   uploadedBy: string
   uploadedAt: string
 }
+
+// Public-safe speaker profile — deliberately NOT derived by exposing raw
+// Registration documents to public reads, since a presenter's Registration
+// also carries payment amounts, accommodation address, and meal preference.
+// Admin curates this directly for now; auto-populating it when a presenter
+// registration is confirmed is a natural Phase 5/6 enhancement that writes
+// INTO this collection rather than exposing Registration itself.
+export interface Speaker {
+  id: string
+  name: string
+  title?: string
+  bio?: string
+  photoMediaId?: string
+  sessionId?: string
+  order: number
+  visible: boolean
+}
+
+// Backs the dedicated FAQ template (an accordion of admin-authored pairs) —
+// deliberately outside the Page/Section/Item system since a Q&A list isn't a
+// card layout. See GERS_Functional_Requirements.docx §2.2.
+export interface FaqItem {
+  id: string
+  question: string
+  answer: string
+  order: number
+}

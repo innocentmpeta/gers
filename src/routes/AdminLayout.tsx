@@ -4,6 +4,8 @@ import clsx from 'clsx'
 const ADMIN_NAV = [
   { to: '/admin', label: 'Dashboard', end: true },
   { to: '/admin/content', label: 'Content' },
+  { to: '/admin/programme', label: 'Programme' },
+  { to: '/admin/speakers', label: 'Speakers' },
   { to: '/admin/registrations', label: 'Registrations' },
   { to: '/admin/prompts', label: 'Prompts & Q&A' },
   { to: '/admin/export', label: 'Export' },
