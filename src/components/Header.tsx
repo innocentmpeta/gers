@@ -42,10 +42,10 @@ export default function Header() {
     <header
       className={clsx(
         'fixed inset-x-0 z-50 transition-[background-color,border-color,top] duration-300',
-        overlay ? 'top-16 bg-transparent' : 'top-0 border-b border-sand-200/80 bg-sand-50/75 backdrop-blur-md'
+        overlay ? 'top-10 bg-transparent' : 'top-0 border-b border-sand-200/80 bg-sand-50/75 backdrop-blur-md'
       )}
     >
-      <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-6 px-6">
+      <div className="mx-auto flex h-[72px] w-full max-w-[1800px] items-center justify-between gap-6 px-[5%]">
         <NavLink
           to="/"
           className={clsx(

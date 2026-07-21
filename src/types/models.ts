@@ -214,7 +214,9 @@ export interface Hero {
   eyebrowText?: string
   headline?: string
   subtext?: string
-  eventDate?: string
+  // Symposiums run across multiple days — a single date wasn't enough.
+  eventStartDate?: string
+  eventEndDate?: string
   cta1Label?: string
   cta1Link?: string
   cta2Label?: string

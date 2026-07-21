@@ -5,6 +5,23 @@ import { getMediaAsset } from '../../lib/firestore/media'
 import { useHeroOverlay } from '../../lib/heroOverlay'
 import type { Hero, MediaAsset } from '../../types/models'
 
+function formatDateRange(start?: string, end?: string): string | null {
+  if (!start) return null
+  const startDate = new Date(`${start}T00:00:00`)
+  const endDate = end && end !== start ? new Date(`${end}T00:00:00`) : null
+  const longFmt: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
+
+  if (!endDate) return startDate.toLocaleDateString(undefined, longFmt)
+
+  const sameMonth =
+    startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear()
+  const startFmt = startDate.toLocaleDateString(
+    undefined,
+    sameMonth ? { day: 'numeric' } : { day: 'numeric', month: 'long' }
+  )
+  return `${startFmt} – ${endDate.toLocaleDateString(undefined, longFmt)}`
+}
+
 function CtaButton({ label, link, primary }: { label: string; link: string; primary: boolean }) {
   const external = link.startsWith('http')
   const className = primary
@@ -54,6 +71,7 @@ export default function HeroBlock({ hero, size = 'compact' }: HeroBlockProps) {
   if (!shouldRender) return null
 
   const objectPosition = hero.focalPoint ? `${hero.focalPoint.x}% ${hero.focalPoint.y}%` : 'center'
+  const dateRange = formatDateRange(hero.eventStartDate, hero.eventEndDate)
 
   return (
     <section
@@ -79,7 +97,7 @@ export default function HeroBlock({ hero, size = 'compact' }: HeroBlockProps) {
         )}
         {hero.headline && <h1 className="mt-2 max-w-2xl text-5xl text-sand-50">{hero.headline}</h1>}
         {hero.subtext && <p className="mt-4 max-w-xl text-slate-200">{hero.subtext}</p>}
-        {hero.eventDate && <p className="mt-3 text-ochre-500">{hero.eventDate}</p>}
+        {dateRange && <p className="mt-3 text-xl font-medium text-ochre-500">{dateRange}</p>}
         {(hero.cta1Label || hero.cta2Label) && (
           <div className="mt-6 flex gap-3">
             {hero.cta1Label && hero.cta1Link && (

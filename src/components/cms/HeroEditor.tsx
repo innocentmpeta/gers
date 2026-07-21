@@ -18,7 +18,8 @@ function toDraft(hero: Hero | null): HeroDraft {
     eyebrowText: hero?.eyebrowText ?? '',
     headline: hero?.headline ?? '',
     subtext: hero?.subtext ?? '',
-    eventDate: hero?.eventDate ?? '',
+    eventStartDate: hero?.eventStartDate ?? '',
+    eventEndDate: hero?.eventEndDate ?? '',
     cta1Label: hero?.cta1Label ?? '',
     cta1Link: hero?.cta1Link ?? '',
     cta2Label: hero?.cta2Label ?? '',
@@ -99,10 +100,13 @@ export default function HeroEditor({ pageId, hero, onSaved }: HeroEditorProps) {
           <input {...field('subtext')} className="rounded-md border border-sand-200 px-3 py-2" />
         </label>
         <label className="flex flex-col gap-1 text-sm text-slate-700">
-          Event date
-          <input type="date" {...field('eventDate')} className="rounded-md border border-sand-200 px-3 py-2" />
+          Start date
+          <input type="date" {...field('eventStartDate')} className="rounded-md border border-sand-200 px-3 py-2" />
         </label>
-        <div />
+        <label className="flex flex-col gap-1 text-sm text-slate-700">
+          End date (optional, for multi-day events)
+          <input type="date" {...field('eventEndDate')} className="rounded-md border border-sand-200 px-3 py-2" />
+        </label>
         <label className="flex flex-col gap-1 text-sm text-slate-700">
           CTA 1 label
           <input {...field('cta1Label')} className="rounded-md border border-sand-200 px-3 py-2" />
