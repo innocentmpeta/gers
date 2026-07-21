@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import clsx from 'clsx'
 import { getMediaAsset } from '../../lib/firestore/media'
 import { useHeroOverlay } from '../../lib/heroOverlay'
 import type { Hero, MediaAsset } from '../../types/models'
@@ -21,7 +22,14 @@ function CtaButton({ label, link, primary }: { label: string; link: string; prim
   )
 }
 
-export default function HeroBlock({ hero }: { hero: Hero | null }) {
+interface HeroBlockProps {
+  hero: Hero | null
+  // 'large' is reserved for the homepage — every other page gets 'compact'
+  // so they read as distinct from Home rather than all looking the same.
+  size?: 'large' | 'compact'
+}
+
+export default function HeroBlock({ hero, size = 'compact' }: HeroBlockProps) {
   const [image, setImage] = useState<MediaAsset | null>(null)
   const { setHasHero } = useHeroOverlay()
 
@@ -48,7 +56,12 @@ export default function HeroBlock({ hero }: { hero: Hero | null }) {
   const objectPosition = hero.focalPoint ? `${hero.focalPoint.x}% ${hero.focalPoint.y}%` : 'center'
 
   return (
-    <section className="relative flex min-h-[85vh] items-end overflow-hidden bg-teal-900 text-sand-50">
+    <section
+      className={clsx(
+        'relative flex items-end overflow-hidden bg-teal-900 text-sand-50',
+        size === 'large' ? 'min-h-[85vh]' : 'min-h-[45vh]'
+      )}
+    >
       {image && (
         <img
           src={image.fileUrl}

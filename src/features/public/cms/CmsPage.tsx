@@ -40,7 +40,7 @@ export default function CmsPage({ slug }: { slug: string }) {
 
   return (
     <div>
-      <HeroBlock hero={hero} />
+      <HeroBlock hero={hero} size={slug === 'home' ? 'large' : 'compact'} />
       {sections.map((section) => (
         <SectionRenderer key={section.id} section={section} />
       ))}

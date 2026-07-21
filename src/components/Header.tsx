@@ -41,8 +41,8 @@ export default function Header() {
   return (
     <header
       className={clsx(
-        'fixed inset-x-0 top-0 z-50 transition-colors duration-300',
-        overlay ? 'bg-transparent' : 'border-b border-sand-200/80 bg-sand-50/75 backdrop-blur-md'
+        'fixed inset-x-0 z-50 transition-[background-color,border-color,top] duration-300',
+        overlay ? 'top-16 bg-transparent' : 'top-0 border-b border-sand-200/80 bg-sand-50/75 backdrop-blur-md'
       )}
     >
       <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-6 px-6">
@@ -58,7 +58,7 @@ export default function Header() {
 
         <nav
           className={clsx(
-            'hidden lg:flex items-center gap-5 text-sm',
+            'hidden lg:flex items-center gap-5 text-base',
             overlay ? 'text-sand-100' : 'text-slate-700'
           )}
         >
