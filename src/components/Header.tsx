@@ -31,16 +31,18 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Overlay = floating transparently over a hero image/banner. Only viable
-  // when the page actually opens with a dark hero — otherwise (plain content
-  // pages, or once scrolled past the hero) it falls back to the solid bar.
+  // Overlay = floating over a hero image/banner. Only viable when the page
+  // actually opens with a dark hero — otherwise (plain content pages, or
+  // once scrolled past the hero) it falls back to the solid bar. The solid
+  // bar itself stays semi-transparent (not opaque) so scrolled content keeps
+  // reading as "behind glass" rather than the nav becoming a flat panel.
   const overlay = hasHero && !scrolled
 
   return (
     <header
       className={clsx(
         'fixed inset-x-0 top-0 z-50 transition-colors duration-300',
-        overlay ? 'bg-transparent' : 'border-b border-sand-200 bg-sand-50/95 backdrop-blur'
+        overlay ? 'bg-transparent' : 'border-b border-sand-200/80 bg-sand-50/75 backdrop-blur-md'
       )}
     >
       <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-6 px-6">
@@ -66,13 +68,23 @@ export default function Header() {
               to={item.to}
               className={({ isActive }) =>
                 clsx(
-                  'transition-colors',
+                  'group relative py-1 transition-colors',
                   overlay ? 'hover:text-sand-50' : 'hover:text-teal-900',
                   isActive && (overlay ? 'text-sand-50 font-medium' : 'text-teal-900 font-medium')
                 )
               }
             >
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  {item.label}
+                  <span
+                    className={clsx(
+                      'pointer-events-none absolute -bottom-0.5 left-0 h-[2px] w-full origin-left scale-x-0 bg-ochre-500 transition-transform duration-200 group-hover:scale-x-100',
+                      isActive && 'scale-x-100'
+                    )}
+                  />
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -81,7 +93,7 @@ export default function Header() {
           {profile?.systemRole && (
             <NavLink
               to="/admin"
-              className="hidden sm:inline-flex items-center rounded-full bg-teal-800 px-3 py-1.5 text-sm text-sand-50 hover:bg-teal-700 transition-colors"
+              className="hidden sm:inline-flex items-center rounded-full bg-teal-800 px-3 py-1.5 text-sm text-sand-50 ring-1 ring-inset ring-sand-50/40 hover:bg-teal-700 transition-colors"
             >
               Admin
             </NavLink>
