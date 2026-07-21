@@ -65,7 +65,10 @@ export default function Home() {
               </div>
             )}
             <div className="flex-1">
-              {content?.introHeading && <h2 className="text-3xl">{content.introHeading}</h2>}
+              {content?.introEyebrow && (
+                <p className="text-sm uppercase tracking-wide text-ochre-600">{content.introEyebrow}</p>
+              )}
+              {content?.introHeading && <h2 className="mt-2 text-3xl">{content.introHeading}</h2>}
               {content?.introBody && <p className="mt-3 text-slate-600">{content.introBody}</p>}
             </div>
           </div>
@@ -75,6 +78,15 @@ export default function Home() {
       {hasCards && (
         <div className="bg-sand-100 py-16">
           <div className="mx-auto max-w-6xl px-6">
+            {(content?.exploreEyebrow || content?.exploreHeading || content?.exploreSubtext) && (
+              <div className="mb-10 max-w-2xl">
+                {content?.exploreEyebrow && (
+                  <p className="text-sm uppercase tracking-wide text-ochre-600">{content.exploreEyebrow}</p>
+                )}
+                {content?.exploreHeading && <h2 className="mt-2 text-3xl">{content.exploreHeading}</h2>}
+                {content?.exploreSubtext && <p className="mt-3 text-slate-600">{content.exploreSubtext}</p>}
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {content?.exploreCards
                 .filter((c) => c.title)
@@ -107,7 +119,10 @@ export default function Home() {
       {hasCta && (
         <div className="bg-teal-900 py-16 text-center text-sand-50">
           <div className="mx-auto max-w-2xl px-6">
-            {content?.ctaHeading && <h2 className="text-3xl text-sand-50">{content.ctaHeading}</h2>}
+            {content?.ctaEyebrow && (
+              <p className="text-sm uppercase tracking-wide text-ochre-500">{content.ctaEyebrow}</p>
+            )}
+            {content?.ctaHeading && <h2 className="mt-2 text-3xl text-sand-50">{content.ctaHeading}</h2>}
             {content?.ctaSubtext && <p className="mt-3 text-slate-200">{content.ctaSubtext}</p>}
             {content?.ctaButtonLabel && content?.ctaButtonLink && (
               <CardLink

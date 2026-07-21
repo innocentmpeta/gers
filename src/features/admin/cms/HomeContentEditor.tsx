@@ -10,16 +10,21 @@ function emptyCard(): HomeExploreCard {
 }
 
 export default function HomeContentEditor({ pageId }: { pageId: string }) {
+  const [introEyebrow, setIntroEyebrow] = useState('')
   const [introHeading, setIntroHeading] = useState('')
   const [introBody, setIntroBody] = useState('')
   const [introImageId, setIntroImageId] = useState<string | undefined>()
   const [introImage, setIntroImage] = useState<MediaAsset | null>(null)
 
+  const [exploreEyebrow, setExploreEyebrow] = useState('')
+  const [exploreHeading, setExploreHeading] = useState('')
+  const [exploreSubtext, setExploreSubtext] = useState('')
   const [cards, setCards] = useState<HomeExploreCard[]>(
     Array.from({ length: EXPLORE_CARD_COUNT }, emptyCard)
   )
   const [cardImages, setCardImages] = useState<Record<number, MediaAsset | null>>({})
 
+  const [ctaEyebrow, setCtaEyebrow] = useState('')
   const [ctaHeading, setCtaHeading] = useState('')
   const [ctaSubtext, setCtaSubtext] = useState('')
   const [ctaButtonLabel, setCtaButtonLabel] = useState('')
@@ -32,12 +37,17 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
   useEffect(() => {
     getHomeContent(pageId).then((content) => {
       if (content) {
+        setIntroEyebrow(content.introEyebrow ?? '')
         setIntroHeading(content.introHeading ?? '')
         setIntroBody(content.introBody ?? '')
         setIntroImageId(content.introImageId)
+        setExploreEyebrow(content.exploreEyebrow ?? '')
+        setExploreHeading(content.exploreHeading ?? '')
+        setExploreSubtext(content.exploreSubtext ?? '')
         const padded = [...content.exploreCards]
         while (padded.length < EXPLORE_CARD_COUNT) padded.push(emptyCard())
         setCards(padded.slice(0, EXPLORE_CARD_COUNT))
+        setCtaEyebrow(content.ctaEyebrow ?? '')
         setCtaHeading(content.ctaHeading ?? '')
         setCtaSubtext(content.ctaSubtext ?? '')
         setCtaButtonLabel(content.ctaButtonLabel ?? '')
@@ -56,13 +66,18 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
     setSaveError(null)
     try {
       await saveHomeContent(pageId, {
+        introEyebrow: introEyebrow || undefined,
         introHeading: introHeading || undefined,
         introBody: introBody || undefined,
         introImageId: introImage?.id ?? introImageId,
+        exploreEyebrow: exploreEyebrow || undefined,
+        exploreHeading: exploreHeading || undefined,
+        exploreSubtext: exploreSubtext || undefined,
         exploreCards: cards.map((c, i) => ({
           ...c,
           imageId: cardImages[i]?.id ?? c.imageId,
         })),
+        ctaEyebrow: ctaEyebrow || undefined,
         ctaHeading: ctaHeading || undefined,
         ctaSubtext: ctaSubtext || undefined,
         ctaButtonLabel: ctaButtonLabel || undefined,
@@ -88,6 +103,14 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
       <section className="rounded-lg border border-sand-200 bg-white p-5">
         <h2 className="text-xl">Intro</h2>
         <div className="mt-4 flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Eyebrow label (small label above the heading, e.g. "ABOUT")
+            <input
+              value={introEyebrow}
+              onChange={(e) => setIntroEyebrow(e.target.value)}
+              className="rounded-md border border-sand-200 px-3 py-2"
+            />
+          </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
             Heading
             <input
@@ -116,7 +139,35 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
 
       <section className="rounded-lg border border-sand-200 bg-white p-5">
         <h2 className="text-xl">Explore ({EXPLORE_CARD_COUNT} cards)</h2>
-        <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="mt-4 flex flex-col gap-3 rounded-md border border-sand-100 bg-sand-50 p-4">
+          <p className="text-sm font-medium text-ochre-600">Section heading</p>
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Eyebrow label (e.g. "EXPLORE")
+            <input
+              value={exploreEyebrow}
+              onChange={(e) => setExploreEyebrow(e.target.value)}
+              className="rounded-md border border-sand-200 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Heading (e.g. "Explore GERS")
+            <input
+              value={exploreHeading}
+              onChange={(e) => setExploreHeading(e.target.value)}
+              className="rounded-md border border-sand-200 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Subtext (optional)
+            <input
+              value={exploreSubtext}
+              onChange={(e) => setExploreSubtext(e.target.value)}
+              className="rounded-md border border-sand-200 px-3 py-2"
+            />
+          </label>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
           {cards.map((card, i) => (
             <div key={i} className="rounded-md border border-sand-100 p-4">
               <p className="text-sm font-medium text-ochre-600">Card {i + 1}</p>
@@ -161,6 +212,14 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
       <section className="rounded-lg border border-sand-200 bg-white p-5">
         <h2 className="text-xl">Closing banner</h2>
         <div className="mt-4 flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-sm text-slate-700">
+            Eyebrow label (optional)
+            <input
+              value={ctaEyebrow}
+              onChange={(e) => setCtaEyebrow(e.target.value)}
+              className="rounded-md border border-sand-200 px-3 py-2"
+            />
+          </label>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
             Heading
             <input

@@ -273,10 +273,15 @@ export interface HomeExploreCard {
 export interface HomeContent {
   id: string
   pageId: string
+  introEyebrow?: string
   introHeading?: string
   introBody?: string
   introImageId?: string
+  exploreEyebrow?: string
+  exploreHeading?: string
+  exploreSubtext?: string
   exploreCards: HomeExploreCard[]
+  ctaEyebrow?: string
   ctaHeading?: string
   ctaSubtext?: string
   ctaButtonLabel?: string
