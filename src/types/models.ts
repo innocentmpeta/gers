@@ -40,6 +40,7 @@ export interface Registration {
   id: string
   userId: string
   symposiumId: string
+  affiliation?: string
   attendanceMode: AttendanceMode
   participationRole: ParticipationRole
   status: RegistrationStatus
@@ -85,6 +86,7 @@ export interface AbstractSubmission {
   id: string
   userId: string
   symposiumId: string
+  affiliation?: string
   track: string
   title: string
   abstractText: string

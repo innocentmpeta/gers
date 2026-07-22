@@ -69,7 +69,7 @@ service cloud.firestore {
         && request.resource.data.confirmed == false;
       allow update: if canRegistrations()
         || (isOwner(resource.data.userId) && onlyChangedKeys([
-              'attendanceMode', 'mealPreference', 'confirmed', 'confirmedAt', 'updatedAt'
+              'affiliation', 'attendanceMode', 'mealPreference', 'confirmed', 'confirmedAt', 'updatedAt'
             ]));
       allow delete: if isSuperAdmin();
     }

@@ -17,6 +17,8 @@ import PastSymposiums from './features/public/pages/PastSymposiums'
 import Faq from './features/public/pages/Faq'
 import RegisterIntro from './features/public/pages/RegisterIntro'
 import AccountHome from './features/account/pages/AccountHome'
+import RegistrationForm from './features/account/pages/RegistrationForm'
+import AbstractSubmissionForm from './features/account/pages/AbstractSubmissionForm'
 import Login from './features/auth/pages/Login'
 import Signup from './features/auth/pages/Signup'
 import ItemDetailPage from './features/public/cms/ItemDetailPage'
@@ -27,6 +29,7 @@ import PageEditor from './features/admin/cms/PageEditor'
 import AdminProgramme from './features/admin/pages/Programme'
 import AdminSpeakers from './features/admin/pages/Speakers'
 import AdminRegistrations from './features/admin/pages/Registrations'
+import AdminAbstracts from './features/admin/pages/Abstracts'
 import AdminPrompts from './features/admin/pages/Prompts'
 import AdminExport from './features/admin/pages/Export'
 import AdminAccounts from './features/admin/pages/Accounts'
@@ -53,6 +56,8 @@ function App() {
 
             <Route element={<RequireAuth />}>
               <Route path="account" element={<AccountHome />} />
+              <Route path="register/apply" element={<RegistrationForm />} />
+              <Route path="register/abstract" element={<AbstractSubmissionForm />} />
             </Route>
           </Route>
 
@@ -67,7 +72,10 @@ function App() {
                 <Route path="programme" element={<AdminProgramme />} />
               </Route>
               <Route path="speakers" element={<AdminSpeakers />} />
-              <Route path="registrations" element={<AdminRegistrations />} />
+              <Route element={<RequireRole capability="registrations" />}>
+                <Route path="registrations" element={<AdminRegistrations />} />
+                <Route path="abstracts" element={<AdminAbstracts />} />
+              </Route>
               <Route path="prompts" element={<AdminPrompts />} />
               <Route path="export" element={<AdminExport />} />
               <Route path="accounts" element={<AdminAccounts />} />
