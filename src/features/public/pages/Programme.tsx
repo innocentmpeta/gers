@@ -50,7 +50,7 @@ export default function Programme() {
             <div className="mt-4 flex flex-col divide-y divide-sand-200 rounded-lg border border-sand-200 bg-white">
               {daySessions.map((session) => (
                 <div key={session.id} className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-baseline sm:gap-6">
-                  <p className="w-32 shrink-0 text-sm text-ochre-600">
+                  <p className="w-32 shrink-0 text-sm text-gold-600">
                     {new Date(session.startTime).toLocaleTimeString(undefined, {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -62,7 +62,7 @@ export default function Programme() {
                     })}
                   </p>
                   <div>
-                    <p className="text-teal-900">{session.title}</p>
+                    <p className="text-ink-900">{session.title}</p>
                     {session.description && <p className="mt-1 text-sm text-slate-500">{session.description}</p>}
                     {session.roomOrTrack && <p className="mt-1 text-xs text-slate-400">{session.roomOrTrack}</p>}
                   </div>

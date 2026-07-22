@@ -124,10 +124,10 @@ export default function AdminProgramme() {
                   <p className="text-sm text-slate-400">
                     {new Date(session.startTime).toLocaleString()} · {session.roomOrTrack || 'No room set'}
                   </p>
-                  <p className="text-teal-900">{session.title}</p>
+                  <p className="text-ink-900">{session.title}</p>
                 </div>
                 <div className="flex gap-3 text-sm">
-                  <button onClick={() => startEdit(session)} className="text-teal-800 underline">
+                  <button onClick={() => startEdit(session)} className="text-ink-800 underline">
                     Edit
                   </button>
                   <button onClick={() => handleDelete(session.id)} className="text-red-600">
@@ -148,7 +148,7 @@ export default function AdminProgramme() {
         {!formOpen && symposium && (
           <button
             onClick={startAdd}
-            className="self-start rounded-md border border-dashed border-sand-300 px-4 py-2 text-sm text-teal-800 hover:border-teal-700"
+            className="self-start rounded-md border border-dashed border-sand-300 px-4 py-2 text-sm text-ink-800 hover:border-ink-700"
           >
             + Add session
           </button>
@@ -230,7 +230,7 @@ function SessionForm({
         <button
           onClick={onSave}
           disabled={saving || !draft.title || !draft.startTime || !draft.endTime}
-          className="rounded-full bg-teal-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-teal-700 disabled:opacity-60"
+          className="rounded-full bg-ink-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Save session'}
         </button>

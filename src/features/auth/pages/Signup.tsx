@@ -48,7 +48,7 @@ export default function Signup() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-teal-950 outline-none focus:border-teal-700"
+            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -58,7 +58,7 @@ export default function Signup() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-teal-950 outline-none focus:border-teal-700"
+            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -69,21 +69,21 @@ export default function Signup() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-teal-950 outline-none focus:border-teal-700"
+            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700"
           />
         </label>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 rounded-full bg-ochre-500 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-ochre-600 disabled:opacity-60"
+          className="mt-2 rounded-full bg-gold-500 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-gold-600 disabled:opacity-60"
         >
           {submitting ? 'Creating account…' : 'Create account'}
         </button>
       </form>
       <p className="mt-6 text-sm text-slate-500">
         Already have an account?{' '}
-        <Link to="/login" className="text-teal-800 underline">
+        <Link to="/login" className="text-ink-800 underline">
           Log in
         </Link>
       </p>

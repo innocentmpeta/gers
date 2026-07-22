@@ -79,7 +79,7 @@ export default function HeroEditor({ pageId, hero, onSaved }: HeroEditorProps) {
           <div className="relative mt-1 max-w-sm cursor-crosshair" onClick={handleFocalClick}>
             <img src={image.fileUrl} alt="" className="w-full rounded" />
             <div
-              className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-ochre-500 shadow"
+              className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-gold-500 shadow"
               style={{ left: `${draft.focalPoint?.x ?? 50}%`, top: `${draft.focalPoint?.y ?? 50}%` }}
             />
           </div>
@@ -128,7 +128,7 @@ export default function HeroEditor({ pageId, hero, onSaved }: HeroEditorProps) {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="mt-5 rounded-full bg-teal-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-teal-700 disabled:opacity-60"
+        className="mt-5 rounded-full bg-ink-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
       >
         {saving ? 'Saving…' : 'Save hero'}
       </button>

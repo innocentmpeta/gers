@@ -12,7 +12,7 @@ export default function AccountHome() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-24">
-      <p className="text-sm uppercase tracking-wide text-ochre-600">My Account</p>
+      <p className="text-sm uppercase tracking-wide text-gold-600">My Account</p>
       <h1 className="mt-2 text-4xl">{profile ? `Welcome, ${profile.name}` : 'My Account'}</h1>
       <p className="mt-4 max-w-xl text-slate-500">
         Registration status, confirmation, meal preference, visibility settings, and session
@@ -28,7 +28,7 @@ export default function AccountHome() {
       )}
       <button
         onClick={handleLogOut}
-        className="mt-8 rounded-full border border-teal-800 px-4 py-2 text-sm text-teal-800 hover:bg-teal-800 hover:text-sand-50"
+        className="mt-8 rounded-full border border-ink-800 px-4 py-2 text-sm text-ink-800 hover:bg-ink-800 hover:text-sand-50"
       >
         Log out
       </button>

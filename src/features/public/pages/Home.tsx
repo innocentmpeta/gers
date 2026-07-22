@@ -66,7 +66,7 @@ export default function Home() {
             )}
             <div className="flex-1">
               {content?.introEyebrow && (
-                <p className="text-sm uppercase tracking-wide text-ochre-600">{content.introEyebrow}</p>
+                <p className="text-sm uppercase tracking-wide text-gold-600">{content.introEyebrow}</p>
               )}
               {content?.introHeading && <h2 className="mt-2 text-3xl">{content.introHeading}</h2>}
               {content?.introBody && <p className="mt-3 text-slate-600">{content.introBody}</p>}
@@ -81,7 +81,7 @@ export default function Home() {
             {(content?.exploreEyebrow || content?.exploreHeading || content?.exploreSubtext) && (
               <div className="mb-10 max-w-2xl">
                 {content?.exploreEyebrow && (
-                  <p className="text-sm uppercase tracking-wide text-ochre-600">{content.exploreEyebrow}</p>
+                  <p className="text-sm uppercase tracking-wide text-gold-600">{content.exploreEyebrow}</p>
                 )}
                 {content?.exploreHeading && <h2 className="mt-2 text-3xl">{content.exploreHeading}</h2>}
                 {content?.exploreSubtext && <p className="mt-3 text-slate-600">{content.exploreSubtext}</p>}
@@ -106,7 +106,7 @@ export default function Home() {
                       )}
                     </div>
                     <div className="flex flex-1 flex-col p-4">
-                      <h3 className="text-lg text-teal-900 group-hover:underline">{card.title}</h3>
+                      <h3 className="text-lg text-ink-900 group-hover:underline">{card.title}</h3>
                       {card.body && <p className="mt-1 text-sm text-slate-500">{card.body}</p>}
                     </div>
                   </CardLink>
@@ -117,17 +117,17 @@ export default function Home() {
       )}
 
       {hasCta && (
-        <div className="bg-teal-900 py-16 text-center text-sand-50">
+        <div className="bg-ink-900 py-16 text-center text-sand-50">
           <div className="mx-auto max-w-2xl px-6">
             {content?.ctaEyebrow && (
-              <p className="text-sm uppercase tracking-wide text-ochre-500">{content.ctaEyebrow}</p>
+              <p className="text-sm uppercase tracking-wide text-gold-500">{content.ctaEyebrow}</p>
             )}
             {content?.ctaHeading && <h2 className="mt-2 text-3xl text-sand-50">{content.ctaHeading}</h2>}
             {content?.ctaSubtext && <p className="mt-3 text-slate-200">{content.ctaSubtext}</p>}
             {content?.ctaButtonLabel && content?.ctaButtonLink && (
               <CardLink
                 link={content.ctaButtonLink}
-                className="mt-6 inline-flex items-center rounded-full bg-ochre-500 px-6 py-3 text-sm font-medium text-sand-50 hover:bg-ochre-600"
+                className="mt-6 inline-flex items-center rounded-full bg-gold-500 px-6 py-3 text-sm font-medium text-sand-50 hover:bg-gold-600"
               >
                 {content.ctaButtonLabel}
               </CardLink>

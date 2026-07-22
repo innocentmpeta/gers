@@ -1,38 +1,66 @@
 @import "tailwindcss";
 
 /*
-  Design tokens per project-docs/GERS_Functional_Requirements.docx §3.6:
-  earth/water base palette, one confident accent, editorial display face
-  paired with a clean sans body. Swap these for UJ's brand values once
-  the brand identity deliverable lands — nothing downstream should need
-  to change, only these values.
+  Design tokens sourced from the GDEnv/GPG Corporate Identity Manual
+  (project-docs/regdenvbrandguide/GDARDE_CorpID.pdf) — actual Pantone values,
+  not invented ones. The guide calls blue (Pantone 8241 C) the "primary"
+  colour, but per the PR's direction, gold (Pantone 871 C) is deliberately
+  the dominant colour here — the reference layout (GDEnv site) leads with
+  gold on nav/buttons and uses blue only for the wordmark. Blue is kept as a
+  secondary accent, not the driver.
+
+  Token naming: ink-* (Pantone Process Black C -> darker/lighter interpolated
+  steps, with 700 landing on the literal Pantone 497 C brown) is the dark
+  "surface" scale — hero overlay, footer, admin sidebar. gold-* (Pantone
+  871 C) is the dominant interactive accent — buttons, active nav, CTAs.
+  slate-* (Pantone 431 C) is neutral UI/body text. blue-700, red-600,
+  green-600, gray-500, and yellow-400 are the remaining brand colours, kept
+  available for variety (badges, tags, future chart colours) without forcing
+  them into the primary chrome.
+
+  Font: Futura per the brand guide. True Futura is a commercial license
+  (Adobe Fonts / purchased webfont), not something to embed without that
+  license — Jost is used as a free, geometrically near-identical stand-in
+  until real Futura files/Adobe Fonts access are available. Swapping it in
+  later is a one-line change here plus the Google Fonts link in index.html.
 */
 @theme {
-  --font-display: 'Playfair Display', ui-serif, Georgia, serif;
-  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Jost', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: 'Jost', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  --color-teal-950: #0d1a18;
-  --color-teal-900: #14302c;
-  --color-teal-800: #1f3d3a;
-  --color-teal-700: #2b504b;
-  --color-teal-600: #3a655f;
+  /* Dark surface scale — Pantone Process Black C (900) interpolated */
+  --color-ink-950: #14110f;
+  --color-ink-900: #231f20;
+  --color-ink-800: #37302f;
+  --color-ink-700: #4e2e28;
+  --color-ink-600: #6b5a4f;
 
-  --color-slate-700: #3f4b52;
-  --color-slate-500: #6b7780;
-  --color-slate-300: #a7b0b6;
+  /* Neutral UI text — Pantone 431 C */
+  --color-slate-700: #4f575c;
+  --color-slate-500: #768187;
+  --color-slate-300: #a7aeb2;
 
+  /* Warm neutral background (unaffected — already reads as a light gold tint) */
   --color-sand-50: #faf7f0;
   --color-sand-100: #f4ede0;
   --color-sand-200: #e9ddc4;
 
-  --color-ochre-500: #c97a2b;
-  --color-ochre-600: #a8621f;
+  /* Dominant accent — Pantone 871 C */
+  --color-gold-500: #ad9961;
+  --color-gold-600: #8a7d4e;
+
+  /* Secondary brand colours — Pantone 8241 C, 186 C, 148-8 U, 877 C, 7548 C */
+  --color-blue-700: #5890a3;
+  --color-red-600: #d2232a;
+  --color-green-600: #41ad49;
+  --color-gray-500: #8b8d8d;
+  --color-yellow-400: #fecb00;
 }
 
 @layer base {
   html {
     font-family: var(--font-sans);
-    color: var(--color-teal-950);
+    color: var(--color-ink-950);
     background: var(--color-sand-50);
   }
 
@@ -41,7 +69,8 @@
   h3,
   h4 {
     font-family: var(--font-display);
-    color: var(--color-teal-900);
+    font-weight: 600;
+    color: var(--color-ink-900);
   }
 
   a {

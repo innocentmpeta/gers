@@ -65,7 +65,7 @@ export default function PageEditor() {
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-10">
-      <Link to="/admin/content" className="text-sm text-slate-500 hover:text-teal-800">
+      <Link to="/admin/content" className="text-sm text-slate-500 hover:text-ink-800">
         ← All pages
       </Link>
       <h1 className="mt-2 text-3xl">{page.title}</h1>
@@ -95,7 +95,7 @@ export default function PageEditor() {
           ))}
           <button
             onClick={handleAddSection}
-            className="self-start rounded-md border border-dashed border-sand-300 px-4 py-2 text-sm text-teal-800 hover:border-teal-700"
+            className="self-start rounded-md border border-dashed border-sand-300 px-4 py-2 text-sm text-ink-800 hover:border-ink-700"
           >
             + Add section
           </button>

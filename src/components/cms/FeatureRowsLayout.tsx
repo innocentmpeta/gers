@@ -19,9 +19,9 @@ export default function FeatureRowsLayout({ items, mediaMap }: { items: Item[]; 
             </div>
             <div className="flex-1">
               {item.tag && (
-                <span className="text-xs uppercase tracking-wide text-ochre-600">{item.tag}</span>
+                <span className="text-xs uppercase tracking-wide text-gold-600">{item.tag}</span>
               )}
-              <h3 className="mt-1 text-2xl text-teal-900">{item.title}</h3>
+              <h3 className="mt-1 text-2xl text-ink-900">{item.title}</h3>
               {item.bodyShort && <p className="mt-3 text-slate-600">{item.bodyShort}</p>}
             </div>
           </ItemLink>

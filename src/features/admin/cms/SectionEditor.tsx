@@ -111,7 +111,7 @@ export default function SectionEditor({
                 </div>
                 <span>{item.title}</span>
               </div>
-              <button onClick={() => setEditingItemId(item.id)} className="text-sm text-teal-800 underline">
+              <button onClick={() => setEditingItemId(item.id)} className="text-sm text-ink-800 underline">
                 Edit
               </button>
             </div>
@@ -129,7 +129,7 @@ export default function SectionEditor({
         ) : (
           <button
             onClick={() => setAddingNew(true)}
-            className="self-start rounded-md border border-dashed border-sand-200 px-3 py-2 text-sm text-teal-800 hover:border-teal-700"
+            className="self-start rounded-md border border-dashed border-sand-200 px-3 py-2 text-sm text-ink-800 hover:border-ink-700"
           >
             + Add item
           </button>

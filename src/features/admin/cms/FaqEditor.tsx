@@ -98,12 +98,12 @@ export default function FaqEditor() {
                   </button>
                 </div>
                 <div>
-                  <p className="text-teal-900">{item.question}</p>
+                  <p className="text-ink-900">{item.question}</p>
                   <p className="mt-1 text-sm text-slate-500">{item.answer}</p>
                 </div>
               </div>
               <div className="flex gap-3 text-sm shrink-0">
-                <button onClick={() => startEdit(item)} className="text-teal-800 underline">
+                <button onClick={() => startEdit(item)} className="text-ink-800 underline">
                   Edit
                 </button>
                 <button onClick={() => handleDelete(item.id)} className="text-red-600">
@@ -131,7 +131,7 @@ export default function FaqEditor() {
         {!formOpen && (
           <button
             onClick={startAdd}
-            className="self-start rounded-md border border-dashed border-sand-300 px-4 py-2 text-sm text-teal-800 hover:border-teal-700"
+            className="self-start rounded-md border border-dashed border-sand-300 px-4 py-2 text-sm text-ink-800 hover:border-ink-700"
           >
             + Add question
           </button>
@@ -181,7 +181,7 @@ function FaqForm({
         <button
           onClick={onSave}
           disabled={saving || !question || !answer}
-          className="rounded-full bg-teal-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-teal-700 disabled:opacity-60"
+          className="rounded-full bg-ink-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Save question'}
         </button>

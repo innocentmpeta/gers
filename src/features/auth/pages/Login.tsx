@@ -38,7 +38,7 @@ export default function Login() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-teal-950 outline-none focus:border-teal-700"
+            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -48,21 +48,21 @@ export default function Login() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-teal-950 outline-none focus:border-teal-700"
+            className="rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700"
           />
         </label>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 rounded-full bg-teal-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-teal-700 disabled:opacity-60"
+          className="mt-2 rounded-full bg-ink-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
         >
           {submitting ? 'Signing in…' : 'Log in'}
         </button>
       </form>
       <p className="mt-6 text-sm text-slate-500">
         No account yet?{' '}
-        <Link to="/signup" className="text-teal-800 underline">
+        <Link to="/signup" className="text-ink-800 underline">
           Create one
         </Link>
       </p>

@@ -28,9 +28,9 @@ export default function Faq() {
           <div className="flex flex-col divide-y divide-sand-200 rounded-lg border border-sand-200 bg-white">
             {items.map((item) => (
               <details key={item.id} className="group px-5 py-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-teal-900">
+                <summary className="flex cursor-pointer list-none items-center justify-between text-ink-900">
                   {item.question}
-                  <span className="ml-4 text-ochre-600 transition-transform group-open:rotate-45">+</span>
+                  <span className="ml-4 text-gold-600 transition-transform group-open:rotate-45">+</span>
                 </summary>
                 <p className="mt-2 text-slate-600">{item.answer}</p>
               </details>

@@ -17,9 +17,9 @@ export default function GridLayout({ items, mediaMap }: { items: Item[]; mediaMa
             </div>
             <div className="flex flex-1 flex-col p-4">
               {item.tag && (
-                <span className="mb-1 text-xs uppercase tracking-wide text-ochre-600">{item.tag}</span>
+                <span className="mb-1 text-xs uppercase tracking-wide text-gold-600">{item.tag}</span>
               )}
-              <h3 className="text-lg text-teal-900 group-hover:underline">{item.title}</h3>
+              <h3 className="text-lg text-ink-900 group-hover:underline">{item.title}</h3>
               {item.bodyShort && <p className="mt-1 text-sm text-slate-500">{item.bodyShort}</p>}
             </div>
           </ItemLink>

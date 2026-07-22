@@ -50,7 +50,7 @@ export default function Header() {
           to="/"
           className={clsx(
             'font-display text-lg font-semibold shrink-0',
-            overlay ? 'text-sand-50' : 'text-teal-900'
+            overlay ? 'text-sand-50' : 'text-ink-900'
           )}
         >
           GERS
@@ -69,8 +69,8 @@ export default function Header() {
               className={({ isActive }) =>
                 clsx(
                   'group relative py-1 transition-colors',
-                  overlay ? 'hover:text-sand-50' : 'hover:text-teal-900',
-                  isActive && (overlay ? 'text-sand-50 font-medium' : 'text-teal-900 font-medium')
+                  overlay ? 'hover:text-sand-50' : 'hover:text-ink-900',
+                  isActive && (overlay ? 'text-sand-50 font-medium' : 'text-ink-900 font-medium')
                 )
               }
             >
@@ -79,7 +79,7 @@ export default function Header() {
                   {item.label}
                   <span
                     className={clsx(
-                      'pointer-events-none absolute -bottom-0.5 left-0 h-[2px] w-full origin-left scale-x-0 bg-ochre-500 transition-transform duration-200 group-hover:scale-x-100',
+                      'pointer-events-none absolute -bottom-0.5 left-0 h-[2px] w-full origin-left scale-x-0 bg-gold-500 transition-transform duration-200 group-hover:scale-x-100',
                       isActive && 'scale-x-100'
                     )}
                   />
@@ -93,7 +93,7 @@ export default function Header() {
           {profile?.systemRole && (
             <NavLink
               to="/admin"
-              className="hidden sm:inline-flex items-center rounded-full bg-teal-800 px-3 py-1.5 text-sm text-sand-50 ring-1 ring-inset ring-sand-50/40 hover:bg-teal-700 transition-colors"
+              className="hidden sm:inline-flex items-center rounded-full bg-ink-800 px-3 py-1.5 text-sm text-sand-50 ring-1 ring-inset ring-sand-50/40 hover:bg-ink-700 transition-colors"
             >
               Admin
             </NavLink>
@@ -103,15 +103,15 @@ export default function Header() {
             className={clsx(
               'hidden sm:inline-flex items-center rounded-full border px-3 py-1.5 text-sm transition-colors',
               overlay
-                ? 'border-sand-50 text-sand-50 hover:bg-sand-50 hover:text-teal-900'
-                : 'border-teal-800 text-teal-800 hover:bg-teal-800 hover:text-sand-50'
+                ? 'border-sand-50 text-sand-50 hover:bg-sand-50 hover:text-ink-900'
+                : 'border-ink-800 text-ink-800 hover:bg-ink-800 hover:text-sand-50'
             )}
           >
             {firebaseUser ? 'My Account' : 'Log In'}
           </NavLink>
           <NavLink
             to="/register"
-            className="inline-flex items-center rounded-full bg-ochre-500 px-4 py-1.5 text-sm font-medium text-sand-50 hover:bg-ochre-600 transition-colors"
+            className="inline-flex items-center rounded-full bg-gold-500 px-4 py-1.5 text-sm font-medium text-sand-50 hover:bg-gold-600 transition-colors"
           >
             Register
           </NavLink>

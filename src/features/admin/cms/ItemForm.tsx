@@ -235,7 +235,7 @@ export default function ItemForm({ sectionId, order, item, onSaved, onCancel }: 
             ))}
             <button
               onClick={() => setRelatedLinks((links) => [...links, { label: '', url: '' }])}
-              className="mt-2 text-sm text-teal-800 underline"
+              className="mt-2 text-sm text-ink-800 underline"
             >
               + Add link
             </button>
@@ -247,7 +247,7 @@ export default function ItemForm({ sectionId, order, item, onSaved, onCancel }: 
         <button
           onClick={handleSave}
           disabled={saving || !title}
-          className="rounded-full bg-teal-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-teal-700 disabled:opacity-60"
+          className="rounded-full bg-ink-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Save item'}
         </button>

@@ -48,12 +48,12 @@ export default function MediaPicker({ label, accept, selectedAssetId, onSelect }
           <img src={selected.fileUrl} alt={selected.altText} className="h-14 w-14 rounded object-cover" />
         )}
         {selected && accept === 'document' && (
-          <span className="text-sm text-teal-800 underline">{selected.altText}</span>
+          <span className="text-sm text-ink-800 underline">{selected.altText}</span>
         )}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="rounded-md border border-sand-200 bg-white px-3 py-1.5 text-sm text-teal-800 hover:border-teal-700"
+          className="rounded-md border border-sand-200 bg-white px-3 py-1.5 text-sm text-ink-800 hover:border-ink-700"
         >
           {selected ? 'Change' : 'Choose'}
         </button>
@@ -70,7 +70,7 @@ export default function MediaPicker({ label, accept, selectedAssetId, onSelect }
 
       {open && (
         <div className="mt-3 rounded-lg border border-sand-200 bg-white p-3">
-          <label className="inline-flex cursor-pointer items-center rounded-md bg-ochre-500 px-3 py-1.5 text-sm font-medium text-sand-50 hover:bg-ochre-600">
+          <label className="inline-flex cursor-pointer items-center rounded-md bg-gold-500 px-3 py-1.5 text-sm font-medium text-sand-50 hover:bg-gold-600">
             {uploading ? 'Uploading…' : 'Upload new'}
             <input
               ref={fileInput}
@@ -93,7 +93,7 @@ export default function MediaPicker({ label, accept, selectedAssetId, onSelect }
                 }}
                 className={clsx(
                   'aspect-square overflow-hidden rounded border-2',
-                  asset.id === selectedAssetId ? 'border-ochre-500' : 'border-transparent'
+                  asset.id === selectedAssetId ? 'border-gold-500' : 'border-transparent'
                 )}
                 title={asset.altText}
               >

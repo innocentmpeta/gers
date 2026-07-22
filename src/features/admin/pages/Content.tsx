@@ -40,10 +40,10 @@ export default function AdminContent() {
             className="flex items-center justify-between px-5 py-4 hover:bg-sand-50"
           >
             <div>
-              <p className="text-teal-900">{page.title}</p>
+              <p className="text-ink-900">{page.title}</p>
               <p className="text-sm text-slate-400">/{page.slug}</p>
             </div>
-            <span className="text-xs uppercase tracking-wide text-ochre-600">
+            <span className="text-xs uppercase tracking-wide text-gold-600">
               {TYPE_LABEL[page.type]}
             </span>
           </Link>

@@ -25,7 +25,7 @@ function formatDateRange(start?: string, end?: string): string | null {
 function CtaButton({ label, link, primary }: { label: string; link: string; primary: boolean }) {
   const external = link.startsWith('http')
   const className = primary
-    ? 'rounded-full bg-ochre-500 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-ochre-600'
+    ? 'rounded-full bg-gold-500 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-gold-600'
     : 'rounded-full border border-sand-50 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-sand-50/10'
 
   return external ? (
@@ -76,7 +76,7 @@ export default function HeroBlock({ hero, size = 'compact' }: HeroBlockProps) {
   return (
     <section
       className={clsx(
-        'relative flex items-end overflow-hidden bg-teal-900 text-sand-50',
+        'relative flex items-end overflow-hidden bg-ink-900 text-sand-50',
         size === 'large' ? 'min-h-[85vh]' : 'min-h-[45vh]'
       )}
     >
@@ -90,14 +90,14 @@ export default function HeroBlock({ hero, size = 'compact' }: HeroBlockProps) {
       )}
       {/* Vignette, not a bottom-only fade: the top needs to stay dark too, since
           the nav floats transparently over it and needs readable contrast. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-teal-950/70 via-teal-950/25 to-teal-950/90" />
+      <div className="absolute inset-0 bg-gradient-to-b from-ink-950/70 via-ink-950/25 to-ink-950/90" />
       <div className="relative mx-auto w-full max-w-6xl px-6 pb-16 pt-28">
         {hero.eyebrowText && (
-          <p className="text-sm uppercase tracking-wide text-ochre-500">{hero.eyebrowText}</p>
+          <p className="text-sm uppercase tracking-wide text-gold-500">{hero.eyebrowText}</p>
         )}
         {hero.headline && <h1 className="mt-2 max-w-2xl text-5xl text-sand-50">{hero.headline}</h1>}
         {hero.subtext && <p className="mt-4 max-w-xl text-slate-200">{hero.subtext}</p>}
-        {dateRange && <p className="mt-3 text-xl font-medium text-ochre-500">{dateRange}</p>}
+        {dateRange && <p className="mt-3 text-xl font-medium text-gold-500">{dateRange}</p>}
         {(hero.cta1Label || hero.cta2Label) && (
           <div className="mt-6 flex gap-3">
             {hero.cta1Label && hero.cta1Link && (

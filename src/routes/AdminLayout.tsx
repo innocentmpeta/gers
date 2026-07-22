@@ -18,7 +18,7 @@ const ADMIN_NAV = [
 export default function AdminLayout() {
   return (
     <div className="flex min-h-svh bg-sand-100">
-      <aside className="w-60 shrink-0 border-r border-sand-200 bg-teal-950 text-sand-100">
+      <aside className="w-60 shrink-0 border-r border-sand-200 bg-ink-950 text-sand-100">
         <div className="px-5 py-6">
           <p className="font-display text-lg text-sand-50">GERS Admin</p>
         </div>
@@ -30,8 +30,8 @@ export default function AdminLayout() {
               end={item.end}
               className={({ isActive }) =>
                 clsx(
-                  'rounded-md px-3 py-2 text-sm transition-colors hover:bg-teal-800',
-                  isActive ? 'bg-teal-800 text-sand-50' : 'text-slate-300'
+                  'rounded-md px-3 py-2 text-sm transition-colors hover:bg-ink-800',
+                  isActive ? 'bg-ink-800 text-sand-50' : 'text-slate-300'
                 )
               }
             >

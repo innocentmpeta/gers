@@ -140,7 +140,7 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
       <section className="rounded-lg border border-sand-200 bg-white p-5">
         <h2 className="text-xl">Explore ({EXPLORE_CARD_COUNT} cards)</h2>
         <div className="mt-4 flex flex-col gap-3 rounded-md border border-sand-100 bg-sand-50 p-4">
-          <p className="text-sm font-medium text-ochre-600">Section heading</p>
+          <p className="text-sm font-medium text-gold-600">Section heading</p>
           <label className="flex flex-col gap-1 text-sm text-slate-700">
             Eyebrow label (e.g. "EXPLORE")
             <input
@@ -170,7 +170,7 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
           {cards.map((card, i) => (
             <div key={i} className="rounded-md border border-sand-100 p-4">
-              <p className="text-sm font-medium text-ochre-600">Card {i + 1}</p>
+              <p className="text-sm font-medium text-gold-600">Card {i + 1}</p>
               <div className="mt-2 flex flex-col gap-3">
                 <label className="flex flex-col gap-1 text-sm text-slate-700">
                   Title
@@ -261,7 +261,7 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="self-start rounded-full bg-teal-800 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-teal-700 disabled:opacity-60"
+          className="self-start rounded-full bg-ink-800 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Save home content'}
         </button>

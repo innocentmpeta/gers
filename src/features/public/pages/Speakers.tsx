@@ -45,8 +45,8 @@ export default function Speakers() {
                     )}
                   </div>
                   <div className="p-5">
-                    <p className="text-lg text-teal-900">{speaker.name}</p>
-                    {speaker.title && <p className="mt-1 text-sm text-ochre-600">{speaker.title}</p>}
+                    <p className="text-lg text-ink-900">{speaker.name}</p>
+                    {speaker.title && <p className="mt-1 text-sm text-gold-600">{speaker.title}</p>}
                     {speaker.bio && <p className="mt-2 text-sm text-slate-500">{speaker.bio}</p>}
                   </div>
                 </div>
