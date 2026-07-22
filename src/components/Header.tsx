@@ -41,11 +41,13 @@ export default function Header() {
   return (
     <header
       className={clsx(
-        'fixed inset-x-0 z-50 transition-[background-color,border-color,top] duration-300',
-        overlay ? 'top-10 bg-transparent' : 'top-0 border-b border-sand-200/80 bg-sand-50/75 backdrop-blur-md'
+        'fixed inset-x-0 top-0 z-50 pt-10 transition-[background-color,border-color] duration-300',
+        overlay
+          ? 'border-b border-gold-500/40 bg-gold-500/10'
+          : 'border-b border-gold-600/30 bg-gold-500/90 backdrop-blur-md'
       )}
     >
-      <div className="mx-auto flex h-[72px] w-full max-w-[1800px] items-center justify-between gap-6 px-[5%]">
+      <div className="mx-auto flex h-[72px] w-full max-w-[1800px] items-center gap-8 px-[5%]">
         <NavLink
           to="/"
           className={clsx(
@@ -56,21 +58,15 @@ export default function Header() {
           GERS
         </NavLink>
 
-        <nav
-          className={clsx(
-            'hidden lg:flex items-center gap-5 text-base',
-            overlay ? 'text-sand-100' : 'text-slate-700'
-          )}
-        >
+        <nav className="hidden lg:flex ml-[3%] items-center gap-5 text-lg text-sand-100">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
                 clsx(
-                  'group relative py-1 transition-colors',
-                  overlay ? 'hover:text-sand-50' : 'hover:text-ink-900',
-                  isActive && (overlay ? 'text-sand-50 font-medium' : 'text-ink-900 font-medium')
+                  'group relative py-1 text-sand-100 transition-colors hover:text-sand-50',
+                  isActive && 'text-sand-50 font-medium'
                 )
               }
             >
@@ -89,7 +85,7 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="ml-auto flex items-center gap-3 shrink-0">
           {profile?.systemRole && (
             <NavLink
               to="/admin"
@@ -111,7 +107,12 @@ export default function Header() {
           </NavLink>
           <NavLink
             to="/register"
-            className="inline-flex items-center rounded-full bg-gold-500 px-4 py-1.5 text-sm font-medium text-sand-50 hover:bg-gold-600 transition-colors"
+            className={clsx(
+              'inline-flex items-center rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+              overlay
+                ? 'bg-gold-500 text-sand-50 hover:bg-gold-600'
+                : 'bg-ink-900 text-gold-500 hover:bg-ink-800'
+            )}
           >
             Register
           </NavLink>

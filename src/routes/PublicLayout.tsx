@@ -12,7 +12,7 @@ function PublicLayoutContent() {
   return (
     <div className="flex min-h-svh flex-col bg-sand-50">
       <Header />
-      <main className={clsx('flex-1', !hasHero && 'pt-[72px]')}>
+      <main className={clsx('flex-1', !hasHero && 'pt-[112px]')}>
         <Outlet />
       </main>
       <Footer />
