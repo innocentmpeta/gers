@@ -36,14 +36,23 @@ export async function getById<T>(collectionName: string, id: string): Promise<T 
 // HomeContent.exploreCards[].imageId) — a top-level-only strip isn't enough,
 // it just moves the crash one level down. Every write goes through here so
 // callers can pass optional-field-bearing domain types straight through.
+//
+// Only recurses into genuine plain objects/arrays — a Firestore sentinel
+// like deleteField() or serverTimestamp() has its own prototype, and
+// treating it as a plain object here would silently strip its special
+// behavior down to an inert copy of its internal fields.
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && value.constructor === Object
+}
+
 function omitUndefinedDeep(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(omitUndefinedDeep)
   }
-  if (value !== null && typeof value === 'object') {
+  if (isPlainObject(value)) {
     const result: Record<string, unknown> = {}
-    for (const key in value as Record<string, unknown>) {
-      const v = (value as Record<string, unknown>)[key]
+    for (const key in value) {
+      const v = value[key]
       if (v !== undefined) result[key] = omitUndefinedDeep(v)
     }
     return result
@@ -54,6 +63,10 @@ function omitUndefinedDeep(value: unknown): unknown {
 function omitUndefined<T extends Record<string, unknown>>(data: T): Partial<T> {
   return omitUndefinedDeep(data) as Partial<T>
 }
+
+// Exported for callers that write via a manual runTransaction() — tx.update()
+// bypasses updateDocById above, so needs the same sanitizing applied by hand.
+export { omitUndefined }
 
 export async function createDoc<T extends { id?: string }>(
   collectionName: string,

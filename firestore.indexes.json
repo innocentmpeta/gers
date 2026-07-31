@@ -31,6 +31,16 @@
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "symposiumId", "order": "ASCENDING" },
+        { "fieldPath": "attendanceMode", "order": "ASCENDING" },
+        { "fieldPath": "confirmationStatus", "order": "ASCENDING" },
+        { "fieldPath": "waitlistedAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

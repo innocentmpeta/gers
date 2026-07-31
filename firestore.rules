@@ -55,9 +55,28 @@ service cloud.firestore {
     }
 
     // ---- symposia ----
+    // confirmedPhysicalCount/confirmedOnlineCount are mutated by attendees'
+    // own confirm/switch transactions (registrations.ts) — there's no Cloud
+    // Function doing this server-side yet (Phase 7), so a plain signed-in
+    // user needs write access to just those two counters. The +/-1 step
+    // check stops a stray write from setting them to an arbitrary number;
+    // it does not make this airtight against a determined adversarial
+    // client, which is an accepted tradeoff for this project's threat model
+    // (see project-docs discussion on account/bot risk) rather than
+    // something worth a Cloud Function to fully close right now.
+    function counterStepOk(field) {
+      let before = resource.data.get(field, 0);
+      let after = request.resource.data.get(field, 0);
+      return after == before || after == before + 1 || after == before - 1;
+    }
     match /symposia/{symposiumId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
+      allow update: if canRegistrations()
+        || (isSignedIn()
+            && onlyChangedKeys(['confirmedPhysicalCount', 'confirmedOnlineCount'])
+            && counterStepOk('confirmedPhysicalCount')
+            && counterStepOk('confirmedOnlineCount'));
+      allow create, delete: if isSuperAdmin();
     }
 
     // ---- registrations ----
@@ -66,10 +85,17 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.status == 'pending_approval'
-        && request.resource.data.confirmed == false;
+        && request.resource.data.confirmationStatus == 'unconfirmed';
+      // Confirmation-state fields (confirmationStatus, waitlistedAt,
+      // offerExpiresAt, previousConfirmedMode, attendanceMode) are trusted
+      // to the client-side transactional functions in registrations.ts
+      // rather than fully state-machine-validated here — same pragmatic
+      // boundary as the counters above.
       allow update: if canRegistrations()
         || (isOwner(resource.data.userId) && onlyChangedKeys([
-              'affiliation', 'attendanceMode', 'mealPreference', 'confirmed', 'confirmedAt', 'updatedAt'
+              'affiliation', 'attendanceMode', 'mealPreference',
+              'confirmationStatus', 'waitlistedAt', 'offerExpiresAt',
+              'previousConfirmedMode', 'confirmedAt', 'updatedAt'
             ]));
       allow delete: if isSuperAdmin();
     }

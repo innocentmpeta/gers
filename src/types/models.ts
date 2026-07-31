@@ -30,11 +30,29 @@ export interface Symposium {
   registrationDeadline: string
   confirmationDeadline: string
   mealEditDeadline: string
+  // Capacity — face-to-face always has a fixed venue cap; online can either
+  // defer to the platform's own limit (Zoom/Teams) or be given one too.
+  // Missing/undefined reads as "no cap configured yet" (unlimited).
+  maxPhysicalAttendees?: number
+  onlineCapacityMode?: 'platform' | 'fixed'
+  maxOnlineAttendees?: number
+  // Counters mutated only inside the confirm/switch transactions in
+  // registrations.ts — never hand-edited. Missing reads as 0.
+  confirmedPhysicalCount?: number
+  confirmedOnlineCount?: number
 }
 
 export type AttendanceMode = 'online' | 'face_to_face' | 'mixed'
 export type ParticipationRole = 'attendee' | 'presenter' | 'exhibitor' | 'partner' | 'organiser' | 'reviewer'
 export type RegistrationStatus = 'pending_approval' | 'approved' | 'rejected'
+
+// Capacity/waitlist state, independent of RegistrationStatus (approval) —
+// see project-docs discussion: registration approval answers "is this a
+// legitimate attendee", confirmationStatus answers "is there a seat".
+// attendanceMode always reflects the mode currently being targeted (which
+// mode confirmationStatus refers to); 'mixed' is deliberately uncapped
+// (ambiguous which pool it draws from) and confirms immediately.
+export type ConfirmationStatus = 'unconfirmed' | 'waitlisted' | 'offered' | 'confirmed'
 
 export interface Registration {
   id: string
@@ -44,7 +62,15 @@ export interface Registration {
   attendanceMode: AttendanceMode
   participationRole: ParticipationRole
   status: RegistrationStatus
-  confirmed: boolean
+  confirmationStatus: ConfirmationStatus
+  waitlistedAt?: string
+  offerExpiresAt?: string
+  // Set only while switching modes: the mode they still actually hold a
+  // seat under (attendanceMode has already moved to the requested target,
+  // confirmationStatus is 'waitlisted'/'offered' for it) — so a switch into
+  // a full mode never forfeits the seat they already had. Cleared, and that
+  // seat released, once the switch completes or is cancelled.
+  previousConfirmedMode?: AttendanceMode
   confirmedAt?: string
   mealPreference?: string
   approvedBy?: string

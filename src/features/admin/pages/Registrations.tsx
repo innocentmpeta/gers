@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
+import { deleteField } from 'firebase/firestore'
 import { useAuth } from '../../../lib/auth'
 import {
   listRegistrations,
   approveRegistration,
   rejectRegistration,
   updateRegistration,
+  syncCapacity,
 } from '../../../lib/firestore/registrations'
 import { listUsersByIds } from '../../../lib/firestore/users'
-import type { Registration, User } from '../../../types/models'
+import { getDefaultSymposium, updateCapacitySettings } from '../../../lib/firestore/symposia'
+import type { ConfirmationStatus, Registration, Symposium, User } from '../../../types/models'
 
 type StatusFilter = 'all' | Registration['status']
 
@@ -21,6 +24,13 @@ const STATUS_COLOR: Record<Registration['status'], string> = {
   pending_approval: 'text-gold-600',
   approved: 'text-green-600',
   rejected: 'text-red-600',
+}
+
+const CONFIRMATION_LABEL: Record<ConfirmationStatus, string> = {
+  unconfirmed: 'Not yet confirmed',
+  waitlisted: 'Waitlisted',
+  offered: 'Offer pending',
+  confirmed: 'Confirmed',
 }
 
 type LogisticsDraft = {
@@ -41,8 +51,105 @@ function toLogisticsDraft(r: Registration): LogisticsDraft {
   }
 }
 
+type CapacityDraft = {
+  maxPhysicalAttendees: string
+  onlineCapacityMode: 'platform' | 'fixed'
+  maxOnlineAttendees: string
+}
+
+function toCapacityDraft(s: Symposium): CapacityDraft {
+  return {
+    maxPhysicalAttendees: s.maxPhysicalAttendees?.toString() ?? '',
+    onlineCapacityMode: s.onlineCapacityMode ?? 'platform',
+    maxOnlineAttendees: s.maxOnlineAttendees?.toString() ?? '',
+  }
+}
+
+function CapacityPanel({ symposium, onSaved }: { symposium: Symposium; onSaved: () => void }) {
+  const [draft, setDraft] = useState<CapacityDraft>(toCapacityDraft(symposium))
+  const [saving, setSaving] = useState(false)
+
+  async function save() {
+    setSaving(true)
+    try {
+      await updateCapacitySettings(symposium.id, {
+        maxPhysicalAttendees:
+          draft.maxPhysicalAttendees.trim() === '' ? deleteField() : Number(draft.maxPhysicalAttendees),
+        onlineCapacityMode: draft.onlineCapacityMode,
+        maxOnlineAttendees:
+          draft.onlineCapacityMode === 'fixed' && draft.maxOnlineAttendees.trim() !== ''
+            ? Number(draft.maxOnlineAttendees)
+            : deleteField(),
+      })
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="mt-6 rounded-lg border border-sand-200 bg-white p-4">
+      <h2 className="text-lg font-semibold text-ink-900">Capacity</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Confirmation is first-come-first-served up to these caps — anyone beyond them is waitlisted and
+        offered a spot (48h to accept) as one opens up.
+      </p>
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-sm text-slate-700">
+          Max physical attendees
+          <input
+            type="number"
+            value={draft.maxPhysicalAttendees}
+            onChange={(e) => setDraft({ ...draft, maxPhysicalAttendees: e.target.value })}
+            placeholder="Unlimited"
+            className="rounded-md border border-sand-200 px-3 py-2"
+          />
+          <span className="text-xs text-slate-500">
+            Confirmed: {symposium.confirmedPhysicalCount ?? 0}
+            {draft.maxPhysicalAttendees && ` / ${draft.maxPhysicalAttendees}`}
+          </span>
+        </label>
+        <label className="flex flex-col gap-1 text-sm text-slate-700">
+          Online capacity
+          <select
+            value={draft.onlineCapacityMode}
+            onChange={(e) => setDraft({ ...draft, onlineCapacityMode: e.target.value as 'platform' | 'fixed' })}
+            className="rounded-md border border-sand-200 px-3 py-2"
+          >
+            <option value="platform">Rely on platform's own limit (unlimited here)</option>
+            <option value="fixed">Set a fixed cap</option>
+          </select>
+          {draft.onlineCapacityMode === 'fixed' && (
+            <>
+              <input
+                type="number"
+                value={draft.maxOnlineAttendees}
+                onChange={(e) => setDraft({ ...draft, maxOnlineAttendees: e.target.value })}
+                placeholder="Max online attendees"
+                className="mt-1 rounded-md border border-sand-200 px-3 py-2"
+              />
+              <span className="text-xs text-slate-500">
+                Confirmed: {symposium.confirmedOnlineCount ?? 0}
+                {draft.maxOnlineAttendees && ` / ${draft.maxOnlineAttendees}`}
+              </span>
+            </>
+          )}
+        </label>
+      </div>
+      <button
+        onClick={save}
+        disabled={saving}
+        className="mt-4 rounded-full bg-ink-800 px-4 py-2 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
+      >
+        {saving ? 'Saving…' : 'Save capacity settings'}
+      </button>
+    </div>
+  )
+}
+
 export default function AdminRegistrations() {
   const { firebaseUser } = useAuth()
+  const [symposium, setSymposium] = useState<Symposium | null>(null)
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [users, setUsers] = useState<Map<string, User>>(new Map())
   const [filter, setFilter] = useState<StatusFilter>('pending_approval')
@@ -52,7 +159,10 @@ export default function AdminRegistrations() {
   const [saving, setSaving] = useState(false)
 
   async function load() {
-    const regs = await listRegistrations()
+    const s = await getDefaultSymposium()
+    if (s) await syncCapacity(s.id)
+    const [freshSymposium, regs] = await Promise.all([getDefaultSymposium(), listRegistrations()])
+    setSymposium(freshSymposium)
     setRegistrations(regs)
     setUsers(await listUsersByIds(regs.map((r) => r.userId)))
     setLoading(false)
@@ -116,6 +226,8 @@ export default function AdminRegistrations() {
         Approve or reject submitted registrations, and record payment/logistics details.
       </p>
 
+      {symposium && <CapacityPanel symposium={symposium} onSaved={load} />}
+
       <div className="mt-6 flex gap-2 text-sm">
         {(['pending_approval', 'approved', 'rejected', 'all'] as StatusFilter[]).map((f) => (
           <button
@@ -147,8 +259,7 @@ export default function AdminRegistrations() {
                     {r.affiliation && <> · {r.affiliation}</>}
                   </p>
                   <p className={`mt-1 text-sm font-medium ${STATUS_COLOR[r.status]}`}>
-                    {STATUS_LABEL[r.status]}
-                    {r.confirmed && ' · Confirmed'}
+                    {STATUS_LABEL[r.status]} · {CONFIRMATION_LABEL[r.confirmationStatus]}
                     {r.mealPreference && ` · ${r.mealPreference}`}
                   </p>
                 </div>
