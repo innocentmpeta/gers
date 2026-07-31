@@ -43,19 +43,17 @@ export default function Header() {
       className={clsx(
         'fixed inset-x-0 top-0 z-50 pt-10 transition-[background-color,border-color] duration-300',
         overlay
-          ? 'border-b border-gold-500/40 bg-gold-500/10'
+          ? 'border-b border-gold-500/40 bg-ink-950/40'
           : 'border-b border-gold-600/30 bg-gold-500/90 backdrop-blur-md'
       )}
     >
       <div className="mx-auto flex h-[72px] w-full max-w-[1800px] items-center gap-8 px-[5%]">
-        <NavLink
-          to="/"
-          className={clsx(
-            'font-display text-lg font-semibold shrink-0',
-            overlay ? 'text-sand-50' : 'text-ink-900'
-          )}
-        >
-          GERS
+        <NavLink to="/" className="shrink-0">
+          <img
+            src={overlay ? '/logo-gold.png' : '/logo-white.png'}
+            alt="GERS — Gauteng Environment Research Symposium"
+            className="h-16 w-auto"
+          />
         </NavLink>
 
         <nav className="hidden lg:flex ml-[3%] items-center gap-5 text-lg text-sand-100">
@@ -75,7 +73,8 @@ export default function Header() {
                   {item.label}
                   <span
                     className={clsx(
-                      'pointer-events-none absolute -bottom-0.5 left-0 h-[2px] w-full origin-left scale-x-0 bg-gold-500 transition-transform duration-200 group-hover:scale-x-100',
+                      'pointer-events-none absolute -bottom-0.5 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-200 group-hover:scale-x-100',
+                      overlay ? 'bg-gold-500' : 'bg-sand-50',
                       isActive && 'scale-x-100'
                     )}
                   />
