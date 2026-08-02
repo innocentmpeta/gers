@@ -7,17 +7,36 @@ export type SystemRole = 'super_admin' | 'organiser' | 'content_manager' | null
 
 export type VisibilityScope = 'private' | 'all_attendees' | 'same_role_only' | 'organisers_only'
 
+// Option sets below are placeholders pending the organisers' confirmation
+// (project-docs meeting notes 2026-07-31 flag Sector/Gender/Age group as
+// "I'll confirm") — adjust here once finalized, nothing else depends on the
+// exact values beyond the sign-up form and admin display.
+export type Salutation = 'Mr' | 'Ms' | 'Mrs' | 'Dr' | 'Prof' | 'Other'
+export type Sector = 'Government' | 'Academia / Research' | 'Private Sector' | 'Civil Society / NGO' | 'Student' | 'Other'
+export type Gender = 'Male' | 'Female' | 'Prefer not to say' | 'Other'
+export type AgeGroup = 'Under 18' | '18-24' | '25-34' | '35-44' | '45-54' | '55-64' | '65+'
+
 export interface User {
   id: string
+  salutation?: Salutation
   name: string
+  surname: string
   email: string
   phone?: string
   whatsappNumber?: string
+  organization?: string
+  jobTitle?: string
+  sector?: Sector
+  gender?: Gender
+  ageGroup?: AgeGroup
   showInDirectory: boolean
   showWhatsapp: boolean
   showEmail: boolean
   visibilityScope: VisibilityScope
   systemRole: SystemRole
+  // Set once at sign-up — the account-creation button doubles as consent to
+  // the data-use disclaimer (project-docs meeting notes 2026-07-31).
+  consentAcceptedAt?: string
   createdAt: string
 }
 
@@ -43,8 +62,24 @@ export interface Symposium {
 }
 
 export type AttendanceMode = 'online' | 'face_to_face' | 'mixed'
-export type ParticipationRole = 'attendee' | 'presenter' | 'exhibitor' | 'partner' | 'organiser' | 'reviewer'
-export type RegistrationStatus = 'pending_approval' | 'approved' | 'rejected'
+
+// Public Participant is the automatic default for every sign-up (always
+// online) — organisers upgrade specific people to the other roles from the
+// admin side (project-docs meeting notes 2026-07-31). Super Admin/Admin/
+// Content Manager are SystemRole, not this — a participation role is what
+// someone IS at the symposium, not what they can administer.
+export type ParticipationRole =
+  | 'public_participant'
+  | 'invited_participant'
+  | 'exhibitor'
+  | 'facilitator'
+  | 'presenter'
+  | 'vip'
+
+// 'withdrawn' is self-initiated (an approved online participant deciding not
+// to attend after all) — distinct from 'rejected', which is an organiser
+// decision.
+export type RegistrationStatus = 'pending_approval' | 'approved' | 'rejected' | 'withdrawn'
 
 // Capacity/waitlist state, independent of RegistrationStatus (approval) —
 // see project-docs discussion: registration approval answers "is this a
@@ -52,13 +87,17 @@ export type RegistrationStatus = 'pending_approval' | 'approved' | 'rejected'
 // attendanceMode always reflects the mode currently being targeted (which
 // mode confirmationStatus refers to); 'mixed' is deliberately uncapped
 // (ambiguous which pool it draws from) and confirms immediately.
+// Only meaningful for invited (in-person) participants — a default online
+// public_participant registration is created already 'confirmed' since
+// there's no per-seat confirmation ceremony for online attendance, just an
+// optional withdraw. Organisers moving someone to invited_participant resets
+// this to 'unconfirmed' so the existing confirm+meal-preference flow applies.
 export type ConfirmationStatus = 'unconfirmed' | 'waitlisted' | 'offered' | 'confirmed'
 
 export interface Registration {
   id: string
   userId: string
   symposiumId: string
-  affiliation?: string
   attendanceMode: AttendanceMode
   participationRole: ParticipationRole
   status: RegistrationStatus

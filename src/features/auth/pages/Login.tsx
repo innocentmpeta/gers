@@ -62,8 +62,8 @@ export default function Login() {
       </form>
       <p className="mt-6 text-sm text-slate-500">
         No account yet?{' '}
-        <Link to="/signup" className="text-ink-800 underline">
-          Create one
+        <Link to="/register/apply" className="text-ink-800 underline">
+          Register
         </Link>
       </p>
     </div>

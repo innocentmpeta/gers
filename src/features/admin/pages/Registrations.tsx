@@ -18,12 +18,14 @@ const STATUS_LABEL: Record<Registration['status'], string> = {
   pending_approval: 'Pending approval',
   approved: 'Approved',
   rejected: 'Not approved',
+  withdrawn: 'Withdrawn',
 }
 
 const STATUS_COLOR: Record<Registration['status'], string> = {
   pending_approval: 'text-gold-600',
   approved: 'text-green-600',
   rejected: 'text-red-600',
+  withdrawn: 'text-slate-500',
 }
 
 const CONFIRMATION_LABEL: Record<ConfirmationStatus, string> = {
@@ -31,6 +33,15 @@ const CONFIRMATION_LABEL: Record<ConfirmationStatus, string> = {
   waitlisted: 'Waitlisted',
   offered: 'Offer pending',
   confirmed: 'Confirmed',
+}
+
+const ROLE_LABEL: Record<Registration['participationRole'], string> = {
+  public_participant: 'Public participant',
+  invited_participant: 'Invited participant',
+  exhibitor: 'Exhibitor',
+  facilitator: 'Facilitator',
+  presenter: 'Presenter',
+  vip: 'VIP',
 }
 
 type LogisticsDraft = {
@@ -229,7 +240,7 @@ export default function AdminRegistrations() {
       {symposium && <CapacityPanel symposium={symposium} onSaved={load} />}
 
       <div className="mt-6 flex gap-2 text-sm">
-        {(['pending_approval', 'approved', 'rejected', 'all'] as StatusFilter[]).map((f) => (
+        {(['pending_approval', 'approved', 'rejected', 'withdrawn', 'all'] as StatusFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -251,12 +262,14 @@ export default function AdminRegistrations() {
             <div key={r.id} className="rounded-lg border border-sand-200 bg-white p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-ink-900">{user?.name ?? 'Unknown user'}</p>
+                  <p className="text-ink-900">
+                    {user ? [user.name, user.surname].filter(Boolean).join(' ') : 'Unknown user'}
+                  </p>
                   <p className="text-sm text-slate-500">{user?.email}</p>
                   <p className="mt-1 text-sm text-slate-700">
-                    <span className="capitalize">{r.participationRole}</span> ·{' '}
+                    {ROLE_LABEL[r.participationRole]} ·{' '}
                     <span className="capitalize">{r.attendanceMode.replaceAll('_', ' ')}</span>
-                    {r.affiliation && <> · {r.affiliation}</>}
+                    {user?.organization && <> · {user.organization}</>}
                   </p>
                   <p className={`mt-1 text-sm font-medium ${STATUS_COLOR[r.status]}`}>
                     {STATUS_LABEL[r.status]} · {CONFIRMATION_LABEL[r.confirmationStatus]}

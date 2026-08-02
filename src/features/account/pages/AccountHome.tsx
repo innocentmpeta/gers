@@ -7,10 +7,10 @@ import {
   attemptConfirm,
   acceptOffer,
   declineOffer,
-  requestModeSwitch,
+  withdrawRegistration,
 } from '../../../lib/firestore/registrations'
 import { listUserAbstractSubmissions } from '../../../lib/firestore/abstractSubmissions'
-import type { AbstractSubmission, AttendanceMode, Registration, Symposium } from '../../../types/models'
+import type { AbstractSubmission, AttendanceMode, ParticipationRole, Registration, Symposium } from '../../../types/models'
 
 const MEAL_OPTIONS = ['Standard', 'Vegetarian', 'Vegan', 'Halal', 'No meal']
 
@@ -18,6 +18,7 @@ const STATUS_LABEL: Record<Registration['status'], string> = {
   pending_approval: 'Pending approval',
   approved: 'Approved',
   rejected: 'Not approved',
+  withdrawn: 'Withdrawn',
 }
 
 const ABSTRACT_STATUS_LABEL: Record<AbstractSubmission['status'], string> = {
@@ -32,6 +33,15 @@ const MODE_LABEL: Record<AttendanceMode, string> = {
   mixed: 'Mixed',
 }
 
+const ROLE_LABEL: Record<ParticipationRole, string> = {
+  public_participant: 'Public participant',
+  invited_participant: 'Invited participant',
+  exhibitor: 'Exhibitor',
+  facilitator: 'Facilitator',
+  presenter: 'Presenter',
+  vip: 'VIP',
+}
+
 export default function AccountHome() {
   const { firebaseUser, profile, logOut } = useAuth()
   const navigate = useNavigate()
@@ -43,7 +53,6 @@ export default function AccountHome() {
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const [mealPreference, setMealPreference] = useState(MEAL_OPTIONS[0])
-  const [switchTarget, setSwitchTarget] = useState<AttendanceMode>('face_to_face')
   const [actionPending, setActionPending] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -109,11 +118,14 @@ export default function AccountHome() {
       await declineOffer(registration.id, symposium.id)
     })
 
-  const handleSwitch = () =>
+  const handleWithdraw = () =>
     runAction(async () => {
-      if (!registration || !symposium) return
-      await requestModeSwitch(registration.id, symposium.id, switchTarget)
+      if (!registration) return
+      if (!confirm('Withdraw your registration? You can register again later if you change your mind.')) return
+      await withdrawRegistration(registration.id)
     })
+
+  const isInvited = registration?.participationRole === 'invited_participant'
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-24">
@@ -160,10 +172,10 @@ export default function AccountHome() {
               <dt className="text-slate-500">Status</dt>
               <dd>{STATUS_LABEL[registration.status]}</dd>
               <dt className="text-slate-500">Role</dt>
-              <dd className="capitalize">{registration.participationRole}</dd>
+              <dd>{ROLE_LABEL[registration.participationRole]}</dd>
               <dt className="text-slate-500">Attendance</dt>
               <dd>{MODE_LABEL[registration.attendanceMode]}</dd>
-              {registration.confirmationStatus === 'confirmed' && (
+              {isInvited && registration.confirmationStatus === 'confirmed' && (
                 <>
                   <dt className="text-slate-500">Confirmed</dt>
                   <dd>Yes{registration.mealPreference && ` — ${registration.mealPreference}`}</dd>
@@ -185,10 +197,22 @@ export default function AccountHome() {
               </p>
             )}
 
-            {registration.status === 'approved' && registration.confirmationStatus === 'unconfirmed' && (
+            {registration.status === 'withdrawn' && (
+              <p className="text-sm text-slate-500">
+                You've withdrawn from {symposium.name}. Want to attend after all?{' '}
+                <Link to="/register/apply" className="text-ink-800 underline">
+                  Register again
+                </Link>
+                .
+              </p>
+            )}
+
+            {/* Invited (in-person) attendees confirm + choose a meal preference ahead of
+                the event — online participation needs neither, just an option to withdraw. */}
+            {isInvited && registration.status === 'approved' && registration.confirmationStatus === 'unconfirmed' && (
               <div className="rounded-md border border-sand-200 p-4">
                 <p className="text-sm text-slate-700">
-                  Please confirm your attendance
+                  You've been invited to attend in person — please confirm your attendance
                   {symposium.confirmationDeadline &&
                     ` before ${new Date(symposium.confirmationDeadline).toLocaleDateString()}`}
                   .
@@ -217,7 +241,7 @@ export default function AccountHome() {
               </div>
             )}
 
-            {registration.confirmationStatus === 'waitlisted' && (
+            {isInvited && registration.confirmationStatus === 'waitlisted' && (
               <div className="rounded-md border border-sand-200 p-4">
                 <p className="text-sm text-slate-700">
                   You're on the waitlist for <strong>{MODE_LABEL[registration.attendanceMode]}</strong>. We'll
@@ -231,7 +255,7 @@ export default function AccountHome() {
               </div>
             )}
 
-            {registration.confirmationStatus === 'offered' && (
+            {isInvited && registration.confirmationStatus === 'offered' && (
               <div className="rounded-md border border-gold-500 bg-sand-50 p-4">
                 <p className="text-sm text-slate-700">
                   A spot has opened up for <strong>{MODE_LABEL[registration.attendanceMode]}</strong>!
@@ -257,34 +281,19 @@ export default function AccountHome() {
               </div>
             )}
 
-            {registration.confirmationStatus === 'confirmed' && (
-              <div className="rounded-md border border-sand-200 p-4">
-                <p className="text-sm text-slate-700">Want to attend a different way?</p>
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <select
-                    value={switchTarget}
-                    onChange={(e) => setSwitchTarget(e.target.value as AttendanceMode)}
-                    className="rounded-md border border-sand-200 bg-white px-3 py-2 text-sm text-ink-950 outline-none focus:border-ink-700"
-                  >
-                    {(Object.keys(MODE_LABEL) as AttendanceMode[])
-                      .filter((m) => m !== registration.attendanceMode)
-                      .map((m) => (
-                        <option key={m} value={m}>
-                          {MODE_LABEL[m]}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    onClick={handleSwitch}
-                    disabled={actionPending}
-                    className="rounded-full border border-ink-800 px-4 py-2 text-sm text-ink-800 hover:bg-ink-800 hover:text-sand-50 disabled:opacity-60"
-                  >
-                    {actionPending ? 'Switching…' : 'Switch attendance mode'}
-                  </button>
-                </div>
-                <p className="mt-2 text-xs text-slate-500">
-                  If the new mode is full, you'll be waitlisted for it without losing your current spot.
+            {registration.status === 'approved' && !isInvited && (
+              <div>
+                <p className="text-sm text-slate-500">
+                  You're registered to join online. We'll be in touch with the session link
+                  closer to the event.
                 </p>
+                <button
+                  onClick={handleWithdraw}
+                  disabled={actionPending}
+                  className="mt-3 text-sm text-red-600 underline disabled:opacity-60"
+                >
+                  Withdraw my registration
+                </button>
               </div>
             )}
           </div>

@@ -8,14 +8,18 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth'
 import { auth } from './firebase'
-import { createUserProfile, newUserProfile, subscribeToUserProfile } from './firestore/users'
+import { createUserProfile, newUserProfile, subscribeToUserProfile, type NewUserProfileInput } from './firestore/users'
 import type { User as UserProfile } from '../types/models'
 
 interface AuthContextValue {
   firebaseUser: FirebaseUser | null
   profile: UserProfile | null
   loading: boolean
-  signUp: (name: string, email: string, password: string) => Promise<void>
+  // Returns the new uid directly — profile/firebaseUser context state updates
+  // asynchronously via onAuthStateChanged, so a caller that needs the uid
+  // right away (e.g. to create a Registration in the same submit) can't wait
+  // on that.
+  signUp: (password: string, profileData: NewUserProfileInput) => Promise<string>
   logIn: (email: string, password: string) => Promise<void>
   logOut: () => Promise<void>
 }
@@ -48,10 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubProfile
   }, [firebaseUser])
 
-  async function signUp(name: string, email: string, password: string) {
-    const cred = await createUserWithEmailAndPassword(auth, email, password)
-    await updateProfile(cred.user, { displayName: name })
-    await createUserProfile(newUserProfile(cred.user.uid, name, email))
+  async function signUp(password: string, profileData: NewUserProfileInput): Promise<string> {
+    const cred = await createUserWithEmailAndPassword(auth, profileData.email, password)
+    // Firestore's own auth listener can lag a beat behind Auth SDK's —
+    // writing immediately after createUserWithEmailAndPassword sometimes
+    // hits a transient permission-denied because the token hasn't
+    // propagated yet. Forcing a fresh token first reliably settles it.
+    await cred.user.getIdToken(true)
+    await updateProfile(cred.user, { displayName: `${profileData.name} ${profileData.surname}` })
+    await createUserProfile(newUserProfile(cred.user.uid, profileData))
+    return cred.user.uid
   }
 
   async function logIn(email: string, password: string) {

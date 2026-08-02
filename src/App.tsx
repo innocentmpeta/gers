@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import { AuthProvider } from './lib/auth'
 import PublicLayout from './routes/PublicLayout'
@@ -17,10 +17,9 @@ import PastSymposiums from './features/public/pages/PastSymposiums'
 import Faq from './features/public/pages/Faq'
 import RegisterIntro from './features/public/pages/RegisterIntro'
 import AccountHome from './features/account/pages/AccountHome'
-import RegistrationForm from './features/account/pages/RegistrationForm'
+import RegisterFlow from './features/account/pages/RegisterFlow'
 import AbstractSubmissionForm from './features/account/pages/AbstractSubmissionForm'
 import Login from './features/auth/pages/Login'
-import Signup from './features/auth/pages/Signup'
 import ItemDetailPage from './features/public/cms/ItemDetailPage'
 
 import AdminDashboard from './features/admin/pages/Dashboard'
@@ -50,13 +49,13 @@ function App() {
             <Route path="past-symposiums" element={<PastSymposiums />} />
             <Route path="faq" element={<Faq />} />
             <Route path="register" element={<RegisterIntro />} />
+            <Route path="register/apply" element={<RegisterFlow />} />
             <Route path="login" element={<Login />} />
-            <Route path="signup" element={<Signup />} />
+            <Route path="signup" element={<Navigate to="/register/apply" replace />} />
             <Route path="i/:slug" element={<ItemDetailPage />} />
 
             <Route element={<RequireAuth />}>
               <Route path="account" element={<AccountHome />} />
-              <Route path="register/apply" element={<RegistrationForm />} />
               <Route path="register/abstract" element={<AbstractSubmissionForm />} />
             </Route>
           </Route>

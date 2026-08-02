@@ -22,11 +22,6 @@ export async function listRegistrations(): Promise<Registration[]> {
   return listWhere<Registration>(col, [orderBy('createdAt', 'desc')])
 }
 
-export type NewRegistrationInput = Pick<
-  Registration,
-  'userId' | 'symposiumId' | 'affiliation' | 'attendanceMode' | 'participationRole' | 'mealPreference'
->
-
 // A returning attendee (any prior *approved* registration, any year) skips
 // manual review — see project-docs discussion: registration approval exists
 // to catch illegitimate/duplicate first-time applicants, not to re-vet
@@ -39,13 +34,19 @@ async function hasPriorApproval(userId: string): Promise<boolean> {
   return prior.length > 0
 }
 
-export async function createRegistration(input: NewRegistrationInput): Promise<string> {
+// The only registration shape self-service sign-up can create — always
+// online/public_participant/confirmed, matching the create rule. Every
+// other role or attendance mode is assigned afterward by an organiser.
+export async function createDefaultRegistration(userId: string, symposiumId: string): Promise<string> {
   const now = new Date().toISOString()
-  const autoApprove = await hasPriorApproval(input.userId)
+  const autoApprove = await hasPriorApproval(userId)
   return createDoc<Registration>(col, {
-    ...input,
+    userId,
+    symposiumId,
+    attendanceMode: 'online',
+    participationRole: 'public_participant',
     status: autoApprove ? 'approved' : 'pending_approval',
-    confirmationStatus: 'unconfirmed',
+    confirmationStatus: 'confirmed',
     createdAt: now,
     updatedAt: now,
   })
@@ -61,6 +62,12 @@ export async function approveRegistration(id: string, approvedBy: string): Promi
 
 export async function rejectRegistration(id: string, approvedBy: string): Promise<void> {
   await updateRegistration(id, { status: 'rejected', approvedBy, approvedAt: new Date().toISOString() })
+}
+
+// Self-service — an approved online participant deciding not to attend.
+// Rules only permit this exact 'approved' -> 'withdrawn' transition.
+export async function withdrawRegistration(id: string): Promise<void> {
+  await updateRegistration(id, { status: 'withdrawn' })
 }
 
 // ---- capacity helpers ----

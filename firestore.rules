@@ -48,7 +48,8 @@ service cloud.firestore {
       allow create: if isOwner(userId) && request.resource.data.systemRole == null;
       allow update: if canAccounts()
         || (isOwner(userId) && onlyChangedKeys([
-              'name', 'phone', 'whatsappNumber',
+              'salutation', 'name', 'surname', 'phone', 'whatsappNumber',
+              'organization', 'jobTitle', 'sector', 'gender', 'ageGroup',
               'showInDirectory', 'showWhatsapp', 'showEmail', 'visibilityScope'
             ]));
       allow delete: if canAccounts();
@@ -82,10 +83,18 @@ service cloud.firestore {
     // ---- registrations ----
     match /registrations/{registrationId} {
       allow read: if isOwner(resource.data.userId) || canRegistrations();
-      allow create: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.status == 'pending_approval'
-        && request.resource.data.confirmationStatus == 'unconfirmed';
+      // Self-service creation can only ever produce a standard online
+      // public-participant registration, already 'confirmed' (no per-seat
+      // confirmation ceremony for online attendance) — every other role or
+      // attendance mode is organiser-assigned afterward, never self-selected
+      // at sign-up (project-docs meeting notes 2026-07-31).
+      allow create: if canRegistrations()
+        || (isSignedIn()
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.status == 'pending_approval'
+            && request.resource.data.attendanceMode == 'online'
+            && request.resource.data.participationRole == 'public_participant'
+            && request.resource.data.confirmationStatus == 'confirmed');
       // Confirmation-state fields (confirmationStatus, waitlistedAt,
       // offerExpiresAt, previousConfirmedMode, attendanceMode) are trusted
       // to the client-side transactional functions in registrations.ts
@@ -93,10 +102,16 @@ service cloud.firestore {
       // boundary as the counters above.
       allow update: if canRegistrations()
         || (isOwner(resource.data.userId) && onlyChangedKeys([
-              'affiliation', 'attendanceMode', 'mealPreference',
+              'attendanceMode', 'mealPreference',
               'confirmationStatus', 'waitlistedAt', 'offerExpiresAt',
               'previousConfirmedMode', 'confirmedAt', 'updatedAt'
-            ]));
+            ]))
+        // Self-withdrawal — the one status change an attendee can make
+        // themselves, and only in this direction (never self-approve).
+        || (isOwner(resource.data.userId)
+            && resource.data.status == 'approved'
+            && request.resource.data.status == 'withdrawn'
+            && onlyChangedKeys(['status', 'updatedAt']));
       allow delete: if isSuperAdmin();
     }
 
