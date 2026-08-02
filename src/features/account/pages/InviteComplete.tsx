@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { isSignInWithEmailLink, signInWithEmailLink, signOut, updateProfile } from 'firebase/auth'
 import { auth } from '../../../lib/firebase'
 import { getPendingInviteByEmail, markInviteConsumed } from '../../../lib/firestore/invites'
-import { newUserProfile, createUserProfile } from '../../../lib/firestore/users'
+import { newUserProfile, createUserProfile, grantSystemRoleFromInvite } from '../../../lib/firestore/users'
 import { completeInviteRegistration } from '../../../lib/firestore/registrations'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 
@@ -63,9 +63,19 @@ export default function InviteComplete() {
         })
       )
 
-      const symposium = await getDefaultSymposium()
-      if (symposium) {
-        await completeInviteRegistration(cred.user.uid, symposium.id, invite)
+      if (invite.systemRole) {
+        await grantSystemRoleFromInvite(cred.user.uid, invite.systemRole, invite.id)
+      }
+
+      if (invite.registerAsAttendee && invite.participationRole && invite.attendanceMode) {
+        const symposium = await getDefaultSymposium()
+        if (symposium) {
+          await completeInviteRegistration(cred.user.uid, symposium.id, {
+            ...invite,
+            participationRole: invite.participationRole,
+            attendanceMode: invite.attendanceMode,
+          })
+        }
       }
       await markInviteConsumed(invite.id)
 

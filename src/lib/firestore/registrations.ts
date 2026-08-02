@@ -1,7 +1,7 @@
 import { doc, runTransaction, deleteField, type FieldValue, type Transaction } from 'firebase/firestore'
 import { db } from '../firebase'
 import { where, orderBy, listWhere, createDoc, updateDocById, omitUndefined } from './crud'
-import type { AttendanceMode, ConfirmationStatus, Invite, Registration, Symposium } from '../../types/models'
+import type { AttendanceMode, ConfirmationStatus, Invite, ParticipationRole, Registration, Symposium } from '../../types/models'
 
 const col = 'registrations'
 const symposiaCol = 'symposia'
@@ -52,6 +52,25 @@ export async function createDefaultRegistration(userId: string, symposiumId: str
   })
 }
 
+// Admin-initiated — for the Accounts & Roles "register for conference
+// attendance" toggle, when a super admin wants an already-existing account
+// (typically their own or a fellow organiser's) added to the attendee system
+// without going through the invite flow. Already approved, since an admin
+// is the one adding them; same shape a returning attendee's sign-up gets.
+export async function adminCreateAttendeeRegistration(userId: string, symposiumId: string): Promise<string> {
+  const now = new Date().toISOString()
+  return createDoc<Registration>(col, {
+    userId,
+    symposiumId,
+    attendanceMode: 'online',
+    participationRole: 'public_participant',
+    status: 'approved',
+    confirmationStatus: 'confirmed',
+    createdAt: now,
+    updatedAt: now,
+  })
+}
+
 // The registration a completed invite produces — role/mode come straight
 // from what the organiser already approved when they sent it (the create
 // rule cross-checks this against the invite doc itself, see firestore.rules).
@@ -62,7 +81,7 @@ export async function createDefaultRegistration(userId: string, symposiumId: str
 export async function completeInviteRegistration(
   userId: string,
   symposiumId: string,
-  invite: Invite
+  invite: Invite & { participationRole: ParticipationRole; attendanceMode: AttendanceMode }
 ): Promise<string> {
   const now = new Date().toISOString()
   return createDoc<Registration>(col, {

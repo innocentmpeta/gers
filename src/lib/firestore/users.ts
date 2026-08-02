@@ -1,7 +1,7 @@
 import { doc, getDoc, setDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore'
 import { db } from '../firebase'
-import { updateDocById, omitUndefined } from './crud'
-import type { User } from '../../types/models'
+import { listWhere, updateDocById, omitUndefined } from './crud'
+import type { SystemRole, User } from '../../types/models'
 
 const usersCol = 'users'
 
@@ -52,6 +52,34 @@ export function subscribeToUserProfile(uid: string, onChange: (profile: User | n
   return onSnapshot(doc(db, usersCol, uid), (snap) => {
     onChange(snap.exists() ? (snap.data() as User) : null)
   })
+}
+
+// Super-admin-only (relies on the `canAccounts` read rule) — powers the
+// Accounts & Roles user list. Small enough dataset for this project's scale
+// that a plain unfiltered list is fine, no pagination needed yet.
+export async function listAllUsers(): Promise<User[]> {
+  return listWhere<User>(usersCol, [])
+}
+
+// Direct role change on an existing account — distinct from the invite-based
+// grant flow, which only exists to get a *new* account its first role. Once
+// the account exists, a super admin can just change this field like any
+// other (the `canAccounts` update rule already allows it unrestricted).
+export async function setUserSystemRole(uid: string, systemRole: SystemRole): Promise<void> {
+  await updateDocById(usersCol, uid, { systemRole })
+}
+
+// Self-service — the one moment a brand-new account can set its own
+// systemRole, by citing the still-pending invite that approved it. Must
+// write both fields together: the rule cross-checks inviteId against the
+// invite doc, so systemRole alone (with no inviteId to point at) wouldn't
+// satisfy it. See matchesPendingInviteRole in firestore.rules.
+export async function grantSystemRoleFromInvite(
+  uid: string,
+  systemRole: Exclude<SystemRole, null>,
+  inviteId: string
+): Promise<void> {
+  await updateDocById(usersCol, uid, { systemRole, inviteId })
 }
 
 export type EditableProfileFields = Pick<

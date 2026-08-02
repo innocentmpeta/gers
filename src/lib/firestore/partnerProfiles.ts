@@ -7,6 +7,15 @@ export async function listPartners(category: PartnerCategory): Promise<PartnerPr
   return listWhere<PartnerProfile>(col, [where('category', '==', category), orderBy('order', 'asc')])
 }
 
+const ALL_CATEGORIES: PartnerCategory[] = ['exhibitor', 'facilitator', 'sponsor']
+
+// Every category, unfiltered — used by the Dashboard's pending-review count,
+// which doesn't care which category a hidden self-submission landed in.
+export async function listAllPartners(): Promise<PartnerProfile[]> {
+  const lists = await Promise.all(ALL_CATEGORIES.map(listPartners))
+  return lists.flat()
+}
+
 export async function listVisiblePartners(category: PartnerCategory): Promise<PartnerProfile[]> {
   return listWhere<PartnerProfile>(col, [
     where('category', '==', category),

@@ -2,8 +2,27 @@ import { useEffect, useState } from 'react'
 import { sendSignInLinkToEmail } from 'firebase/auth'
 import { auth } from '../../../lib/firebase'
 import { createInvite, listInvites } from '../../../lib/firestore/invites'
+import { listAllUsers, setUserSystemRole } from '../../../lib/firestore/users'
+import {
+  listRegistrations,
+  adminCreateAttendeeRegistration,
+  updateRegistration,
+} from '../../../lib/firestore/registrations'
+import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import { useAuth } from '../../../lib/auth'
-import type { AgeGroup, AttendanceMode, Gender, Invite, ParticipationRole, Salutation, Sector } from '../../../types/models'
+import type {
+  AgeGroup,
+  AttendanceMode,
+  Gender,
+  Invite,
+  ParticipationRole,
+  Registration,
+  Salutation,
+  Sector,
+  SystemRole,
+  Symposium,
+  User,
+} from '../../../types/models'
 
 const SALUTATIONS: Salutation[] = ['Mr', 'Ms', 'Mrs', 'Dr', 'Prof', 'Other']
 const SECTORS: Sector[] = ['Government', 'Academia / Research', 'Private Sector', 'Civil Society / NGO', 'Student', 'Other']
@@ -25,6 +44,15 @@ const MODE_LABEL: Record<AttendanceMode, string> = {
   mixed: 'Mixed',
 }
 
+// 'organiser' is the underlying systemRole value throughout the codebase —
+// shown here as "Symposium Manager" to match how the organisers refer to it.
+const SYSTEM_ROLE_LABEL: Record<Exclude<SystemRole, null>, string> = {
+  content_manager: 'Content Manager',
+  organiser: 'Symposium Manager',
+  super_admin: 'Super Admin',
+}
+const SYSTEM_ROLES = Object.keys(SYSTEM_ROLE_LABEL) as Exclude<SystemRole, null>[]
+
 type Draft = {
   salutation: Salutation | ''
   name: string
@@ -36,6 +64,8 @@ type Draft = {
   gender: Gender | ''
   ageGroup: AgeGroup | ''
   whatsappNumber: string
+  systemRole: SystemRole | ''
+  registerAsAttendee: boolean
   participationRole: ParticipationRole
   attendanceMode: AttendanceMode
 }
@@ -51,6 +81,8 @@ const EMPTY: Draft = {
   gender: '',
   ageGroup: '',
   whatsappNumber: '',
+  systemRole: '',
+  registerAsAttendee: false,
   participationRole: 'vip',
   attendanceMode: 'online',
 }
@@ -74,6 +106,15 @@ function mapError(err: unknown): string {
   return 'Could not send the invite — please try again.'
 }
 
+function inviteSummary(invite: Invite): string {
+  const parts: string[] = []
+  if (invite.systemRole) parts.push(SYSTEM_ROLE_LABEL[invite.systemRole])
+  if (invite.registerAsAttendee && invite.participationRole && invite.attendanceMode) {
+    parts.push(`${ROLE_LABEL[invite.participationRole]} · ${MODE_LABEL[invite.attendanceMode]}`)
+  }
+  return parts.join(' · ') || '—'
+}
+
 export default function AdminAccounts() {
   const { profile } = useAuth()
   const [draft, setDraft] = useState<Draft>(EMPTY)
@@ -83,8 +124,26 @@ export default function AdminAccounts() {
   const [invites, setInvites] = useState<Invite[]>([])
   const [resendingId, setResendingId] = useState<string | null>(null)
 
+  const [users, setUsers] = useState<User[]>([])
+  const [symposium, setSymposium] = useState<Symposium | null>(null)
+  const [registrationsByUser, setRegistrationsByUser] = useState<Map<string, Registration>>(new Map())
+  const [attendanceBusyId, setAttendanceBusyId] = useState<string | null>(null)
+
   async function load() {
-    setInvites(await listInvites())
+    const [inv, allUsers, sym, regs] = await Promise.all([
+      listInvites(),
+      listAllUsers(),
+      getDefaultSymposium(),
+      listRegistrations(),
+    ])
+    setInvites(inv)
+    setUsers(allUsers.sort((a, b) => a.name.localeCompare(b.name)))
+    setSymposium(sym)
+    const map = new Map<string, Registration>()
+    for (const r of regs) {
+      if (r.status !== 'withdrawn') map.set(r.userId, r)
+    }
+    setRegistrationsByUser(map)
   }
 
   useEffect(() => {
@@ -109,8 +168,10 @@ export default function AdminAccounts() {
         gender: draft.gender || undefined,
         ageGroup: draft.ageGroup || undefined,
         whatsappNumber: draft.whatsappNumber || undefined,
-        participationRole: draft.participationRole,
-        attendanceMode: draft.attendanceMode,
+        systemRole: draft.systemRole || undefined,
+        registerAsAttendee: draft.registerAsAttendee,
+        participationRole: draft.registerAsAttendee ? draft.participationRole : undefined,
+        attendanceMode: draft.registerAsAttendee ? draft.attendanceMode : undefined,
         invitedBy: profile.id,
       })
       await sendSignInLinkToEmail(auth, draft.email, actionCodeSettingsFor(draft.email))
@@ -135,13 +196,37 @@ export default function AdminAccounts() {
     }
   }
 
+  async function handleRoleChange(user: User, role: SystemRole) {
+    await setUserSystemRole(user.id, role)
+    await load()
+  }
+
+  async function handleToggleAttendance(user: User) {
+    if (!symposium) return
+    setAttendanceBusyId(user.id)
+    try {
+      const existing = registrationsByUser.get(user.id)
+      if (existing) {
+        await updateRegistration(existing.id, { status: 'withdrawn' })
+      } else {
+        await adminCreateAttendeeRegistration(user.id, symposium.id)
+      }
+      await load()
+    } finally {
+      setAttendanceBusyId(null)
+    }
+  }
+
+  const canRegisterAttendance = !draft.systemRole || draft.registerAsAttendee
+  const formValid = draft.email && draft.name && draft.surname && (draft.systemRole || draft.registerAsAttendee)
+
   return (
-    <div className="mx-auto max-w-3xl px-8 py-10">
+    <div className="mx-auto max-w-4xl px-8 py-10">
       <h1 className="text-3xl">Accounts &amp; Roles</h1>
       <p className="mt-2 text-sm text-slate-500">
-        Invite someone who can't self-register — VIPs, invited experts — with a role and attendance
-        mode already set. They get a passwordless sign-in link by email; completing it creates their
-        account and registration automatically.
+        Invite someone who can't self-register — a new organiser account, a VIP, an invited expert —
+        with a role and/or attendance already set. They get a passwordless sign-in link by email;
+        completing it creates their account automatically.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3 rounded-lg border border-sand-200 bg-white p-5">
@@ -258,39 +343,78 @@ export default function AdminAccounts() {
               className="rounded-md border border-sand-200 px-3 py-2"
             />
           </label>
+        </div>
+
+        <div className="mt-2 rounded-md border border-sand-200 p-4">
           <label className="flex flex-col gap-1 text-sm text-slate-700">
-            Role
+            System role (admin access — leave as "None" for an attendee-only invite)
             <select
-              value={draft.participationRole}
-              onChange={(e) => setDraft({ ...draft, participationRole: e.target.value as ParticipationRole })}
+              value={draft.systemRole ?? ''}
+              onChange={(e) => setDraft({ ...draft, systemRole: (e.target.value || null) as SystemRole | '' })}
               className="rounded-md border border-sand-200 px-3 py-2"
             >
-              {(Object.keys(ROLE_LABEL) as ParticipationRole[]).map((r) => (
+              <option value="">None</option>
+              {SYSTEM_ROLES.map((r) => (
                 <option key={r} value={r}>
-                  {ROLE_LABEL[r]}
+                  {SYSTEM_ROLE_LABEL[r]}
                 </option>
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm text-slate-700">
-            Attendance
-            <select
-              value={draft.attendanceMode}
-              onChange={(e) => setDraft({ ...draft, attendanceMode: e.target.value as AttendanceMode })}
-              className="rounded-md border border-sand-200 px-3 py-2"
-            >
-              <option value="online">Online</option>
-              <option value="face_to_face">Face to face</option>
-            </select>
-          </label>
         </div>
 
+        <div className="mt-2 rounded-md border border-sand-200 p-4">
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={draft.registerAsAttendee}
+              onChange={(e) => setDraft({ ...draft, registerAsAttendee: e.target.checked })}
+            />
+            Also register them for the symposium
+          </label>
+          {draft.registerAsAttendee && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                Role
+                <select
+                  value={draft.participationRole}
+                  onChange={(e) => setDraft({ ...draft, participationRole: e.target.value as ParticipationRole })}
+                  className="rounded-md border border-sand-200 px-3 py-2"
+                >
+                  {(Object.keys(ROLE_LABEL) as ParticipationRole[]).map((r) => (
+                    <option key={r} value={r}>
+                      {ROLE_LABEL[r]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1 text-sm text-slate-700">
+                Attendance
+                <select
+                  value={draft.attendanceMode}
+                  onChange={(e) => setDraft({ ...draft, attendanceMode: e.target.value as AttendanceMode })}
+                  className="rounded-md border border-sand-200 px-3 py-2"
+                >
+                  <option value="online">Online</option>
+                  <option value="face_to_face">Face to face</option>
+                </select>
+              </label>
+            </div>
+          )}
+        </div>
+
+        {!canRegisterAttendance && (
+          <p className="text-xs text-slate-400">
+            Tip: most organisers also attend — tick "Also register them for the symposium" if this
+            person should show up as an attendee too.
+          </p>
+        )}
         {error && <p className="text-sm text-red-600">{error}</p>}
         {justInvited && <p className="text-sm text-green-600">Invite sent to {justInvited}.</p>}
 
         <button
           type="submit"
-          disabled={sending}
+          disabled={sending || !formValid}
           className="mt-2 self-start rounded-full bg-ink-800 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
         >
           {sending ? 'Sending…' : 'Send invite'}
@@ -306,9 +430,7 @@ export default function AdminAccounts() {
               <p className="text-ink-900">
                 {invite.name} {invite.surname} — {invite.email}
               </p>
-              <p className="text-sm text-slate-500">
-                {ROLE_LABEL[invite.participationRole]} · {MODE_LABEL[invite.attendanceMode]}
-              </p>
+              <p className="text-sm text-slate-500">{inviteSummary(invite)}</p>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <span className={invite.status === 'pending' ? 'text-gold-600' : 'text-green-600'}>
@@ -326,6 +448,53 @@ export default function AdminAccounts() {
             </div>
           </div>
         ))}
+      </div>
+
+      <h2 className="mt-10 text-lg font-semibold text-ink-900">All users</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Change an existing account's system role, or toggle whether they're also registered to
+        attend {symposium?.name ?? 'the symposium'}.
+      </p>
+      <div className="mt-3 flex flex-col divide-y divide-sand-200 rounded-lg border border-sand-200 bg-white">
+        {users.length === 0 && <p className="px-5 py-4 text-sm text-slate-400">No accounts yet.</p>}
+        {users.map((user) => {
+          const registration = registrationsByUser.get(user.id)
+          return (
+            <div key={user.id} className="flex items-center justify-between gap-4 px-5 py-4">
+              <div>
+                <p className="text-ink-900">
+                  {user.name} {user.surname}
+                </p>
+                <p className="text-sm text-slate-500">{user.email}</p>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <select
+                  value={user.systemRole ?? ''}
+                  onChange={(e) => handleRoleChange(user, (e.target.value || null) as SystemRole)}
+                  className="rounded-md border border-sand-200 px-2 py-1.5"
+                >
+                  <option value="">No system role</option>
+                  {SYSTEM_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {SYSTEM_ROLE_LABEL[r]}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => handleToggleAttendance(user)}
+                  disabled={!symposium || attendanceBusyId === user.id}
+                  className="whitespace-nowrap text-ink-800 underline disabled:opacity-60"
+                >
+                  {attendanceBusyId === user.id
+                    ? 'Working…'
+                    : registration
+                      ? 'Withdraw attendance'
+                      : 'Register for attendance'}
+                </button>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

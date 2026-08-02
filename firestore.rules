@@ -46,21 +46,36 @@ service cloud.firestore {
         || canRegistrations()
         || resource.data.showInDirectory == true;
       allow create: if isOwner(userId) && request.resource.data.systemRole == null;
+      // Granting a systemRole to yourself is otherwise impossible (the create
+      // rule above forces it null) — the one exception is completing an
+      // invite that a super admin already approved for this exact role,
+      // mirroring matchesPendingInvite on registrations below.
+      function matchesPendingInviteRole(inviteId, newRole) {
+        let invite = get(/databases/$(database)/documents/invites/$(inviteId)).data;
+        return invite.email == request.auth.token.email
+          && invite.status == 'pending'
+          && invite.systemRole == newRole;
+      }
       allow update: if canAccounts()
         || (isOwner(userId) && onlyChangedKeys([
               'salutation', 'name', 'surname', 'phone', 'whatsappNumber',
               'organization', 'jobTitle', 'sector', 'gender', 'ageGroup',
               'showInDirectory', 'showWhatsapp', 'showEmail', 'visibilityScope'
-            ]));
+            ]))
+        || (isOwner(userId)
+            && onlyChangedKeys(['systemRole', 'inviteId'])
+            && matchesPendingInviteRole(request.resource.data.inviteId, request.resource.data.systemRole));
       allow delete: if canAccounts();
     }
 
-    // ---- invites (organiser-created passwordless invites for VIPs/experts
-    // who can't self-register) ----
+    // ---- invites (super-admin-created passwordless invites for VIPs/experts
+    // who can't self-register, and for new organiser/content-manager
+    // accounts — account/role creation is accountManagement-gated, so this
+    // stays canAccounts()-only rather than any admin role) ----
     match /invites/{inviteId} {
       allow read: if canAccounts() || canRegistrations()
         || (isSignedIn() && resource.data.email == request.auth.token.email);
-      allow create: if isAnyAdmin();
+      allow create: if canAccounts();
       // The only self-service transition is marking one's own pending
       // invite consumed, immediately after completing sign-in with it.
       allow update: if canAccounts() || canRegistrations()

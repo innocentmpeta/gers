@@ -34,6 +34,11 @@ export interface User {
   showEmail: boolean
   visibilityScope: VisibilityScope
   systemRole: SystemRole
+  // Present only when systemRole was granted by completing an admin invite
+  // (see Invite below) — lets the Firestore rule cross-check the granted
+  // role against what a super admin actually approved, instead of trusting
+  // the client's self-reported value at signup.
+  inviteId?: string
   // Set once at sign-up — the account-creation button doubles as consent to
   // the data-use disclaimer (project-docs meeting notes 2026-07-31).
   consentAcceptedAt?: string
@@ -128,12 +133,15 @@ export interface Registration {
   updatedAt: string
 }
 
-// An organiser-initiated invite for someone who can't self-register (VIPs,
-// invited experts) — passwordless: the organiser fills in the profile and
-// role up front, sends a sign-in link, and the invitee's own first sign-in
-// completes the User/Registration creation (project-docs meeting notes
-// 2026-07-31, "let's use the passwordless-link approach"). 'status' tracks
-// whether that completion has happened yet.
+// A super-admin-initiated invite for someone who can't self-register (VIPs,
+// invited experts, or a new organiser/content manager account) —
+// passwordless: the admin fills in the profile/role up front, sends a
+// sign-in link, and the invitee's own first sign-in completes the
+// User/Registration creation (project-docs meeting notes 2026-07-31, "let's
+// use the passwordless-link approach"). 'status' tracks whether that
+// completion has happened yet. A single invite can grant a systemRole, an
+// attendee registration, or both — an invited organiser might also be
+// attending in person, for instance.
 export interface Invite {
   id: string
   email: string
@@ -146,8 +154,14 @@ export interface Invite {
   gender?: Gender
   ageGroup?: AgeGroup
   whatsappNumber?: string
-  participationRole: ParticipationRole
-  attendanceMode: AttendanceMode
+  // Admin capability to grant on completion — omitted/undefined for a plain
+  // attendee invite (e.g. a VIP with no admin access).
+  systemRole?: Exclude<SystemRole, null>
+  // Whether completing this invite should also create a symposium
+  // Registration. participationRole/attendanceMode only matter when true.
+  registerAsAttendee: boolean
+  participationRole?: ParticipationRole
+  attendanceMode?: AttendanceMode
   status: 'pending' | 'consumed'
   invitedBy: string
   createdAt: string

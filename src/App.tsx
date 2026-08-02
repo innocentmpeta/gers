@@ -90,8 +90,12 @@ function App() {
                 <Route path="abstracts" element={<AdminAbstracts />} />
               </Route>
               <Route path="prompts" element={<AdminPrompts />} />
-              <Route path="export" element={<AdminExport />} />
-              <Route path="accounts" element={<AdminAccounts />} />
+              <Route element={<RequireRole capability="export" />}>
+                <Route path="export" element={<AdminExport />} />
+              </Route>
+              <Route element={<RequireRole capability="accountManagement" />}>
+                <Route path="accounts" element={<AdminAccounts />} />
+              </Route>
             </Route>
           </Route>
         </Routes>
