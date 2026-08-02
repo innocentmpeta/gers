@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import HeroBlock from '../../../components/cms/HeroBlock'
 import SectionRenderer from '../../../components/cms/SectionRenderer'
 import { getPageBySlug } from '../../../lib/firestore/pages'
@@ -9,7 +9,9 @@ import type { Hero, Page, Section } from '../../../types/models'
 // Renders any freeform or curated page from the CMS — one component covers
 // About/Event Overview/Exhibition/Student Track/Register-intro/Past Symposiums/Home
 // rather than duplicating this fetch-and-render logic per page.
-export default function CmsPage({ slug }: { slug: string }) {
+// `afterHero` lets pages that belong to the Symposium nav section slot in
+// SymposiumSubNav between the hero and the CMS sections.
+export default function CmsPage({ slug, afterHero }: { slug: string; afterHero?: ReactNode }) {
   const [page, setPage] = useState<Page | null>(null)
   const [hero, setHero] = useState<Hero | null>(null)
   const [sections, setSections] = useState<Section[]>([])
@@ -41,6 +43,7 @@ export default function CmsPage({ slug }: { slug: string }) {
   return (
     <div>
       <HeroBlock hero={hero} size={slug === 'home' ? 'large' : 'compact'} />
+      {afterHero}
       {sections.map((section) => (
         <SectionRenderer key={section.id} section={section} />
       ))}

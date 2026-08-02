@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import HeroBlock from '../../../components/cms/HeroBlock'
+import SymposiumSubNav from '../../../components/SymposiumSubNav'
 import { usePageHero } from '../cms/usePageHero'
 import { listSessions } from '../../../lib/firestore/sessions'
 import type { Session } from '../../../types/models'
@@ -33,6 +34,7 @@ export default function Programme() {
   return (
     <div>
       <HeroBlock hero={hero} />
+      <SymposiumSubNav />
       <div className="mx-auto max-w-4xl px-6 py-16">
         {days.size === 0 && (
           <p className="text-slate-500">The programme hasn't been published yet — check back soon.</p>

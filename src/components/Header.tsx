@@ -6,11 +6,8 @@ import { useHeroOverlay } from '../lib/heroOverlay'
 
 const NAV_ITEMS = [
   { to: '/about', label: 'About' },
-  { to: '/event-overview', label: 'Event Overview' },
-  { to: '/programme', label: 'Programme' },
-  { to: '/speakers', label: 'Speakers' },
-  { to: '/exhibition', label: 'Exhibition' },
-  { to: '/student-track', label: 'Student Track' },
+  { to: '/symposium', label: 'Symposium' },
+  { to: '/partners', label: 'Partners' },
   { to: '/past-symposiums', label: 'Past Symposiums' },
   { to: '/faq', label: 'FAQ' },
 ]

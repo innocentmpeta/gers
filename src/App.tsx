@@ -13,6 +13,7 @@ import Programme from './features/public/pages/Programme'
 import Speakers from './features/public/pages/Speakers'
 import Exhibition from './features/public/pages/Exhibition'
 import StudentTrack from './features/public/pages/StudentTrack'
+import Partners from './features/public/pages/Partners'
 import PastSymposiums from './features/public/pages/PastSymposiums'
 import Faq from './features/public/pages/Faq'
 import RegisterIntro from './features/public/pages/RegisterIntro'
@@ -42,17 +43,26 @@ function App() {
           <Route element={<PublicLayout />}>
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
-            <Route path="event-overview" element={<EventOverview />} />
-            <Route path="programme" element={<Programme />} />
-            <Route path="speakers" element={<Speakers />} />
-            <Route path="exhibition" element={<Exhibition />} />
-            <Route path="student-track" element={<StudentTrack />} />
+            <Route path="symposium" element={<EventOverview />} />
+            <Route path="symposium/programme" element={<Programme />} />
+            <Route path="symposium/speakers" element={<Speakers />} />
+            <Route path="symposium/exhibition" element={<Exhibition />} />
+            <Route path="symposium/student-track" element={<StudentTrack />} />
+            <Route path="partners" element={<Partners />} />
             <Route path="past-symposiums" element={<PastSymposiums />} />
             <Route path="faq" element={<Faq />} />
             <Route path="register" element={<RegisterIntro />} />
             <Route path="register/apply" element={<RegisterFlow />} />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<Navigate to="/register/apply" replace />} />
+            {/* Old top-level paths from before the nav restructure — kept as
+                redirects since CMS-authored links (e.g. Home page cards) may
+                still point at them. */}
+            <Route path="event-overview" element={<Navigate to="/symposium" replace />} />
+            <Route path="programme" element={<Navigate to="/symposium/programme" replace />} />
+            <Route path="speakers" element={<Navigate to="/symposium/speakers" replace />} />
+            <Route path="exhibition" element={<Navigate to="/symposium/exhibition" replace />} />
+            <Route path="student-track" element={<Navigate to="/symposium/student-track" replace />} />
             <Route path="i/:slug" element={<ItemDetailPage />} />
 
             <Route element={<RequireAuth />}>
