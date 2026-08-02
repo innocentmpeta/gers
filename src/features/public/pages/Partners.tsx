@@ -8,6 +8,7 @@ import type { MediaAsset, PartnerCategory, PartnerProfile } from '../../../types
 const CATEGORY_LABEL: Record<PartnerCategory, string> = {
   exhibitor: 'Exhibitors',
   facilitator: 'Facilitators',
+  sponsor: 'Sponsors',
 }
 
 export default function Partners() {
@@ -39,7 +40,7 @@ export default function Partners() {
       <HeroBlock hero={hero} />
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="flex gap-2 text-sm">
-          {(['exhibitor', 'facilitator'] as PartnerCategory[]).map((c) => (
+          {(['exhibitor', 'facilitator', 'sponsor'] as PartnerCategory[]).map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}

@@ -11,6 +11,7 @@ import type { MediaAsset, PartnerCategory, PartnerProfile } from '../../../types
 const CATEGORY_LABEL: Record<PartnerCategory, string> = {
   exhibitor: 'Exhibitors',
   facilitator: 'Facilitators',
+  sponsor: 'Sponsors',
 }
 
 type Draft = {
@@ -118,7 +119,7 @@ export default function AdminPartners() {
       </p>
 
       <div className="mt-6 flex gap-2 text-sm">
-        {(['exhibitor', 'facilitator'] as PartnerCategory[]).map((c) => (
+        {(['exhibitor', 'facilitator', 'sponsor'] as PartnerCategory[]).map((c) => (
           <button
             key={c}
             onClick={() => setCategory(c)}
