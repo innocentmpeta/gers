@@ -126,7 +126,11 @@ export default function AccountHome() {
       await withdrawRegistration(registration.id)
     })
 
-  const isInvited = registration?.participationRole === 'invited_participant'
+  // Keyed off attendance mode, not role — any face-to-face registration
+  // (invited_participant, or a VIP/exhibitor/etc invited to attend in
+  // person) needs the same confirm + meal-preference step; a face-to-face
+  // registrant with a different role isn't a "just show up online" case.
+  const isInvited = registration?.attendanceMode === 'face_to_face'
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-24">

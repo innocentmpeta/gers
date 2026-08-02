@@ -112,6 +112,11 @@ export interface Registration {
   previousConfirmedMode?: AttendanceMode
   confirmedAt?: string
   mealPreference?: string
+  // Present only when this registration was created by completing an
+  // organiser-sent invite (see Invite below) — lets the Firestore create
+  // rule cross-check the role/mode against what the organiser actually
+  // approved, instead of trusting the client's self-reported values.
+  inviteId?: string
   approvedBy?: string
   approvedAt?: string
   registrationAmountPaid?: number
@@ -121,6 +126,32 @@ export interface Registration {
   accommodationAddress?: string
   createdAt: string
   updatedAt: string
+}
+
+// An organiser-initiated invite for someone who can't self-register (VIPs,
+// invited experts) — passwordless: the organiser fills in the profile and
+// role up front, sends a sign-in link, and the invitee's own first sign-in
+// completes the User/Registration creation (project-docs meeting notes
+// 2026-07-31, "let's use the passwordless-link approach"). 'status' tracks
+// whether that completion has happened yet.
+export interface Invite {
+  id: string
+  email: string
+  salutation?: Salutation
+  name: string
+  surname: string
+  organization?: string
+  jobTitle?: string
+  sector?: Sector
+  gender?: Gender
+  ageGroup?: AgeGroup
+  whatsappNumber?: string
+  participationRole: ParticipationRole
+  attendanceMode: AttendanceMode
+  status: 'pending' | 'consumed'
+  invitedBy: string
+  createdAt: string
+  consumedAt?: string
 }
 
 export interface ExhibitorProfile {

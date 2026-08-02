@@ -20,6 +20,7 @@ import RegisterIntro from './features/public/pages/RegisterIntro'
 import AccountHome from './features/account/pages/AccountHome'
 import RegisterFlow from './features/account/pages/RegisterFlow'
 import AbstractSubmissionForm from './features/account/pages/AbstractSubmissionForm'
+import InviteComplete from './features/account/pages/InviteComplete'
 import Login from './features/auth/pages/Login'
 import ItemDetailPage from './features/public/cms/ItemDetailPage'
 
@@ -55,6 +56,7 @@ function App() {
             <Route path="register/apply" element={<RegisterFlow />} />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<Navigate to="/register/apply" replace />} />
+            <Route path="invite/complete" element={<InviteComplete />} />
             {/* Old top-level paths from before the nav restructure — kept as
                 redirects since CMS-authored links (e.g. Home page cards) may
                 still point at them. */}

@@ -1,7 +1,7 @@
 import { doc, runTransaction, deleteField, type FieldValue, type Transaction } from 'firebase/firestore'
 import { db } from '../firebase'
 import { where, orderBy, listWhere, createDoc, updateDocById, omitUndefined } from './crud'
-import type { AttendanceMode, ConfirmationStatus, Registration, Symposium } from '../../types/models'
+import type { AttendanceMode, ConfirmationStatus, Invite, Registration, Symposium } from '../../types/models'
 
 const col = 'registrations'
 const symposiaCol = 'symposia'
@@ -47,6 +47,32 @@ export async function createDefaultRegistration(userId: string, symposiumId: str
     participationRole: 'public_participant',
     status: autoApprove ? 'approved' : 'pending_approval',
     confirmationStatus: 'confirmed',
+    createdAt: now,
+    updatedAt: now,
+  })
+}
+
+// The registration a completed invite produces — role/mode come straight
+// from what the organiser already approved when they sent it (the create
+// rule cross-checks this against the invite doc itself, see firestore.rules).
+// Already 'approved' — an organiser-issued invite doesn't need the usual
+// pending-review step. Online is auto-confirmed like a normal sign-up;
+// face-to-face starts 'unconfirmed' so the invitee still goes through the
+// same confirm + meal-preference step as anyone else invited in person.
+export async function completeInviteRegistration(
+  userId: string,
+  symposiumId: string,
+  invite: Invite
+): Promise<string> {
+  const now = new Date().toISOString()
+  return createDoc<Registration>(col, {
+    userId,
+    symposiumId,
+    inviteId: invite.id,
+    attendanceMode: invite.attendanceMode,
+    participationRole: invite.participationRole,
+    status: 'approved',
+    confirmationStatus: invite.attendanceMode === 'face_to_face' ? 'unconfirmed' : 'confirmed',
     createdAt: now,
     updatedAt: now,
   })

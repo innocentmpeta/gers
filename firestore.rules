@@ -55,6 +55,23 @@ service cloud.firestore {
       allow delete: if canAccounts();
     }
 
+    // ---- invites (organiser-created passwordless invites for VIPs/experts
+    // who can't self-register) ----
+    match /invites/{inviteId} {
+      allow read: if canAccounts() || canRegistrations()
+        || (isSignedIn() && resource.data.email == request.auth.token.email);
+      allow create: if isAnyAdmin();
+      // The only self-service transition is marking one's own pending
+      // invite consumed, immediately after completing sign-in with it.
+      allow update: if canAccounts() || canRegistrations()
+        || (isSignedIn()
+            && resource.data.email == request.auth.token.email
+            && resource.data.status == 'pending'
+            && request.resource.data.status == 'consumed'
+            && onlyChangedKeys(['status', 'consumedAt']));
+      allow delete: if isAnyAdmin();
+    }
+
     // ---- symposia ----
     // confirmedPhysicalCount/confirmedOnlineCount are mutated by attendees'
     // own confirm/switch transactions (registrations.ts) — there's no Cloud
@@ -88,13 +105,28 @@ service cloud.firestore {
       // confirmation ceremony for online attendance) — every other role or
       // attendance mode is organiser-assigned afterward, never self-selected
       // at sign-up (project-docs meeting notes 2026-07-31).
+      // Invite completion: the invite doc itself is the authorization — an
+      // organiser already chose this role/mode when they sent it, so the
+      // invitee's own first sign-in may create exactly that registration
+      // (and nothing else) by citing a still-pending invite to their email.
+      function matchesPendingInvite(inviteId, data) {
+        let invite = get(/databases/$(database)/documents/invites/$(inviteId)).data;
+        return invite.email == request.auth.token.email
+          && invite.status == 'pending'
+          && data.participationRole == invite.participationRole
+          && data.attendanceMode == invite.attendanceMode;
+      }
       allow create: if canRegistrations()
         || (isSignedIn()
             && request.resource.data.userId == request.auth.uid
             && request.resource.data.status == 'pending_approval'
             && request.resource.data.attendanceMode == 'online'
             && request.resource.data.participationRole == 'public_participant'
-            && request.resource.data.confirmationStatus == 'confirmed');
+            && request.resource.data.confirmationStatus == 'confirmed')
+        || (isSignedIn()
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.status == 'approved'
+            && matchesPendingInvite(request.resource.data.inviteId, request.resource.data));
       // Confirmation-state fields (confirmationStatus, waitlistedAt,
       // offerExpiresAt, previousConfirmedMode, attendanceMode) are trusted
       // to the client-side transactional functions in registrations.ts
