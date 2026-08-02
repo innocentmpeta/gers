@@ -1,4 +1,4 @@
-import { doc, runTransaction, deleteField, type Transaction } from 'firebase/firestore'
+import { doc, runTransaction, deleteField, type FieldValue, type Transaction } from 'firebase/firestore'
 import { db } from '../firebase'
 import { where, orderBy, listWhere, createDoc, updateDocById, omitUndefined } from './crud'
 import type { AttendanceMode, ConfirmationStatus, Registration, Symposium } from '../../types/models'
@@ -52,7 +52,11 @@ export async function createDefaultRegistration(userId: string, symposiumId: str
   })
 }
 
-export async function updateRegistration(id: string, data: Partial<Registration>): Promise<void> {
+// Each field also accepts a FieldValue (deleteField()) for a genuine clear —
+// omitUndefined only skips undefined keys, it can't un-set an existing one.
+type RegistrationUpdate = { [K in keyof Registration]?: Registration[K] | FieldValue }
+
+export async function updateRegistration(id: string, data: RegistrationUpdate): Promise<void> {
   await updateDocById(col, id, { ...data, updatedAt: new Date().toISOString() })
 }
 
@@ -370,4 +374,54 @@ async function expireStaleOffersAndPromote(symposiumId: string): Promise<void> {
   for (const mode of freedModes) {
     await promoteNextWaitlisted(symposiumId, mode)
   }
+}
+
+// ---- organiser actions ----
+// In-person attendance is invitation-only (project-docs meeting notes
+// 2026-07-31) — organisers choose who's eligible, not a first-come queue.
+// The existing confirm/waitlist/offer machinery above still applies *after*
+// an invite: an invited participant still has to confirm before the event,
+// and if organisers invite more people than the physical cap (expecting
+// some drop-off), late confirmers still correctly waitlist and get offered
+// a spot if one frees up.
+
+// Resets confirmationStatus to 'unconfirmed' so the existing confirm +
+// meal-preference flow applies — inviting never claims a seat by itself.
+export async function inviteToAttendInPerson(registrationId: string): Promise<void> {
+  await updateRegistration(registrationId, {
+    participationRole: 'invited_participant',
+    attendanceMode: 'face_to_face',
+    confirmationStatus: 'unconfirmed',
+    waitlistedAt: deleteField(),
+    offerExpiresAt: deleteField(),
+    previousConfirmedMode: deleteField(),
+  })
+}
+
+// Reverts to a standard online public participant. Releases whatever seat
+// they were holding (confirmed or provisionally offered) first, if any —
+// call promoteNextWaitlisted('face_to_face') afterward if this returns true,
+// since a real slot may have just freed up.
+export async function uninviteFromInPerson(registrationId: string, symposiumId: string): Promise<boolean> {
+  return runTransaction(db, async (tx) => {
+    const { registration, symposium } = await loadPair(tx, registrationId, symposiumId)
+    const heldASeat = registration.confirmationStatus === 'confirmed' || registration.confirmationStatus === 'offered'
+    if (heldASeat) bumpCounter(tx, symposiumId, symposium, 'face_to_face', -1)
+
+    const now = new Date().toISOString()
+    tx.update(
+      regRef(registrationId),
+      omitUndefined({
+        participationRole: 'public_participant',
+        attendanceMode: 'online',
+        confirmationStatus: 'confirmed',
+        confirmedAt: now,
+        waitlistedAt: deleteField(),
+        offerExpiresAt: deleteField(),
+        previousConfirmedMode: deleteField(),
+        updatedAt: now,
+      })
+    )
+    return heldASeat
+  })
 }

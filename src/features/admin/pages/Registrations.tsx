@@ -7,6 +7,9 @@ import {
   rejectRegistration,
   updateRegistration,
   syncCapacity,
+  inviteToAttendInPerson,
+  uninviteFromInPerson,
+  promoteNextWaitlisted,
 } from '../../../lib/firestore/registrations'
 import { listUsersByIds } from '../../../lib/firestore/users'
 import { getDefaultSymposium, updateCapacitySettings } from '../../../lib/firestore/symposia'
@@ -76,9 +79,21 @@ function toCapacityDraft(s: Symposium): CapacityDraft {
   }
 }
 
-function CapacityPanel({ symposium, onSaved }: { symposium: Symposium; onSaved: () => void }) {
+function CapacityPanel({
+  symposium,
+  registrations,
+  onSaved,
+}: {
+  symposium: Symposium
+  registrations: Registration[]
+  onSaved: () => void
+}) {
   const [draft, setDraft] = useState<CapacityDraft>(toCapacityDraft(symposium))
   const [saving, setSaving] = useState(false)
+
+  const invitedCount = registrations.filter((r) => r.participationRole === 'invited_participant').length
+  const approvedCount = registrations.filter((r) => r.status === 'approved').length
+  const pendingCount = registrations.filter((r) => r.status === 'pending_approval').length
 
   async function save() {
     setSaving(true)
@@ -102,9 +117,26 @@ function CapacityPanel({ symposium, onSaved }: { symposium: Symposium; onSaved: 
     <div className="mt-6 rounded-lg border border-sand-200 bg-white p-4">
       <h2 className="text-lg font-semibold text-ink-900">Capacity</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Confirmation is first-come-first-served up to these caps — anyone beyond them is waitlisted and
-        offered a spot (48h to accept) as one opens up.
+        In-person attendance is by invitation — use the caps below as a guide when deciding who to
+        invite, factoring in expected drop-off. Registration itself is never blocked by these.
       </p>
+      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-700">
+        <div>
+          <dt className="inline text-slate-500">Pending review: </dt>
+          <dd className="inline font-medium">{pendingCount}</dd>
+        </div>
+        <div>
+          <dt className="inline text-slate-500">Approved: </dt>
+          <dd className="inline font-medium">{approvedCount}</dd>
+        </div>
+        <div>
+          <dt className="inline text-slate-500">Invited in-person: </dt>
+          <dd className="inline font-medium">
+            {invitedCount}
+            {symposium.maxPhysicalAttendees != null && ` / ${symposium.maxPhysicalAttendees}`}
+          </dd>
+        </div>
+      </dl>
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm text-slate-700">
           Max physical attendees
@@ -196,6 +228,19 @@ export default function AdminRegistrations() {
     load()
   }
 
+  async function handleInvite(id: string) {
+    await inviteToAttendInPerson(id)
+    load()
+  }
+
+  async function handleUninvite(id: string) {
+    if (!symposium) return
+    if (!confirm("Revoke this person's in-person invitation? They'll move back to online.")) return
+    const freedSeat = await uninviteFromInPerson(id, symposium.id)
+    if (freedSeat) await promoteNextWaitlisted(symposium.id, 'face_to_face')
+    load()
+  }
+
   function startLogistics(r: Registration) {
     setEditingLogisticsId(r.id)
     setLogisticsDraft(toLogisticsDraft(r))
@@ -237,7 +282,7 @@ export default function AdminRegistrations() {
         Approve or reject submitted registrations, and record payment/logistics details.
       </p>
 
-      {symposium && <CapacityPanel symposium={symposium} onSaved={load} />}
+      {symposium && <CapacityPanel symposium={symposium} registrations={registrations} onSaved={load} />}
 
       <div className="mt-6 flex gap-2 text-sm">
         {(['pending_approval', 'approved', 'rejected', 'withdrawn', 'all'] as StatusFilter[]).map((f) => (
@@ -286,6 +331,16 @@ export default function AdminRegistrations() {
                         Reject
                       </button>
                     </>
+                  )}
+                  {r.status === 'approved' && r.participationRole === 'public_participant' && (
+                    <button onClick={() => handleInvite(r.id)} className="text-ink-800 underline">
+                      Invite in person
+                    </button>
+                  )}
+                  {r.participationRole === 'invited_participant' && (
+                    <button onClick={() => handleUninvite(r.id)} className="text-red-600 underline">
+                      Revoke invitation
+                    </button>
                   )}
                   <button
                     onClick={() => startLogistics(r)}
