@@ -10,6 +10,7 @@ import {
   withdrawRegistration,
 } from '../../../lib/firestore/registrations'
 import { listUserAbstractSubmissions } from '../../../lib/firestore/abstractSubmissions'
+import RoleProfileEditor from '../RoleProfileEditor'
 import type { AbstractSubmission, AttendanceMode, ParticipationRole, Registration, Symposium } from '../../../types/models'
 
 const MEAL_OPTIONS = ['Standard', 'Vegetarian', 'Vegan', 'Halal', 'No meal']
@@ -313,6 +314,14 @@ export default function AccountHome() {
           </div>
         )}
       </div>
+
+      {firebaseUser &&
+        registration &&
+        (registration.participationRole === 'presenter' ||
+          registration.participationRole === 'exhibitor' ||
+          registration.participationRole === 'facilitator') && (
+          <RoleProfileEditor userId={firebaseUser.uid} role={registration.participationRole} />
+        )}
 
       <button
         onClick={handleLogOut}

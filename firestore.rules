@@ -236,15 +236,42 @@ service cloud.firestore {
     }
 
     // ---- speakers (public-safe profile — never expose Registration itself) ----
+    // Presenters can submit/edit their own entry (project-docs meeting notes
+    // 2026-07-31) but never publish it themselves — self-create must start
+    // hidden, and 'visible'/'order'/'sessionId' aren't in the self-editable
+    // field list, so only an admin can actually put it on the public site.
     match /speakers/{id} {
       allow read: if true;
-      allow write: if isAnyAdmin();
+      allow create: if isAnyAdmin()
+        || (isSignedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.visible == false);
+      allow update: if isAnyAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid && onlyChangedKeys([
+              'name', 'title', 'bio', 'photoMediaId', 'presentationMediaId'
+            ]));
+      allow delete: if isAnyAdmin();
+    }
+
+    // ---- partnerProfiles (exhibitors/facilitators — same self-submit-then-
+    // admin-approve pattern as speakers above) ----
+    match /partnerProfiles/{id} {
+      allow read: if true;
+      allow create: if isAnyAdmin()
+        || (isSignedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.visible == false);
+      allow update: if isAnyAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid && onlyChangedKeys([
+              'name', 'blurb', 'logoMediaId', 'imageMediaId', 'websiteUrl'
+            ]));
+      allow delete: if isAnyAdmin();
     }
 
     // ---- mediaAssets ----
+    // Create is open to any signed-in user (matches storage.rules — presenters/
+    // exhibitors/facilitators upload their own bio photo/logo/presentation);
+    // modifying or deleting an existing asset stays admin-only.
     match /mediaAssets/{id} {
       allow read: if true;
-      allow write: if isAnyAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if isAnyAdmin();
     }
 
     // ---- knowledgeBaseDocuments (bot's raw material — not public) ----

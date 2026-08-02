@@ -17,17 +17,20 @@ service firebase.storage {
       return request.auth != null ? request.auth.token.systemRole : null;
     }
 
-    function isAnyAdmin() {
-      return role() == 'super_admin' || role() == 'organiser' || role() == 'content_manager';
-    }
-
     function isCMSAdmin() {
       return role() == 'super_admin' || role() == 'content_manager';
     }
 
+    // Any signed-in user can upload here now, not just admins — presenters/
+    // exhibitors/facilitators upload their own bio photo/logo/presentation
+    // (project-docs meeting notes 2026-07-31). A raw upload never appears on
+    // the public site by itself: it only becomes visible once an admin
+    // reviews and publishes the mediaAssets-referencing record (speaker/
+    // partnerProfile) that points at it — matches the self-submit-then-
+    // approve pattern already applied at the Firestore rules layer.
     match /media/{allPaths=**} {
       allow read: if true;
-      allow write: if isAnyAdmin();
+      allow write: if request.auth != null;
     }
 
     match /knowledge-base/{allPaths=**} {

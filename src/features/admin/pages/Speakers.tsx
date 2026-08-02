@@ -9,10 +9,18 @@ type Draft = {
   title: string
   bio: string
   photoMediaId?: string
+  presentationMediaId?: string
   sessionId: string
 }
 
-const EMPTY: Draft = { name: '', title: '', bio: '', photoMediaId: undefined, sessionId: '' }
+const EMPTY: Draft = {
+  name: '',
+  title: '',
+  bio: '',
+  photoMediaId: undefined,
+  presentationMediaId: undefined,
+  sessionId: '',
+}
 
 function toDraft(speaker: Speaker): Draft {
   return {
@@ -20,6 +28,7 @@ function toDraft(speaker: Speaker): Draft {
     title: speaker.title ?? '',
     bio: speaker.bio ?? '',
     photoMediaId: speaker.photoMediaId,
+    presentationMediaId: speaker.presentationMediaId,
     sessionId: speaker.sessionId ?? '',
   }
 }
@@ -31,6 +40,7 @@ export default function AdminSpeakers() {
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState<Draft>(EMPTY)
   const [photo, setPhoto] = useState<MediaAsset | null>(null)
+  const [presentation, setPresentation] = useState<MediaAsset | null>(null)
   const [saving, setSaving] = useState(false)
 
   async function load() {
@@ -48,6 +58,7 @@ export default function AdminSpeakers() {
     setAdding(false)
     setDraft(toDraft(speaker))
     setPhoto(null)
+    setPresentation(null)
   }
 
   function startAdd() {
@@ -55,6 +66,7 @@ export default function AdminSpeakers() {
     setEditingId(null)
     setDraft(EMPTY)
     setPhoto(null)
+    setPresentation(null)
   }
 
   function cancel() {
@@ -70,6 +82,7 @@ export default function AdminSpeakers() {
         title: draft.title || undefined,
         bio: draft.bio || undefined,
         photoMediaId: photo?.id ?? draft.photoMediaId,
+        presentationMediaId: presentation?.id ?? draft.presentationMediaId,
         sessionId: draft.sessionId || undefined,
       }
       if (editingId) {
@@ -115,6 +128,8 @@ export default function AdminSpeakers() {
                 setDraft={setDraft}
                 photo={photo}
                 setPhoto={setPhoto}
+                presentation={presentation}
+                setPresentation={setPresentation}
                 sessions={sessions}
                 onSave={handleSave}
                 onCancel={cancel}
@@ -126,7 +141,10 @@ export default function AdminSpeakers() {
               <div>
                 <p className="text-ink-900">{speaker.name}</p>
                 {speaker.title && <p className="text-sm text-slate-500">{speaker.title}</p>}
-                {!speaker.visible && <p className="text-xs text-red-600">Hidden from public site</p>}
+                {!speaker.visible && speaker.userId && (
+                  <p className="text-xs text-gold-600">Self-submitted — pending review</p>
+                )}
+                {!speaker.visible && !speaker.userId && <p className="text-xs text-red-600">Hidden from public site</p>}
               </div>
               <div className="flex gap-3 text-sm">
                 <button onClick={() => toggleVisible(speaker)} className="text-ink-800 underline">
@@ -150,6 +168,8 @@ export default function AdminSpeakers() {
               setDraft={setDraft}
               photo={photo}
               setPhoto={setPhoto}
+              presentation={presentation}
+              setPresentation={setPresentation}
               sessions={sessions}
               onSave={handleSave}
               onCancel={cancel}
@@ -176,6 +196,8 @@ function SpeakerForm({
   setDraft,
   photo,
   setPhoto,
+  presentation,
+  setPresentation,
   sessions,
   onSave,
   onCancel,
@@ -185,6 +207,8 @@ function SpeakerForm({
   setDraft: (d: Draft) => void
   photo: MediaAsset | null
   setPhoto: (a: MediaAsset | null) => void
+  presentation: MediaAsset | null
+  setPresentation: (a: MediaAsset | null) => void
   sessions: Session[]
   onSave: () => void
   onCancel: () => void
@@ -222,6 +246,12 @@ function SpeakerForm({
         accept="image"
         selectedAssetId={photo?.id ?? draft.photoMediaId}
         onSelect={setPhoto}
+      />
+      <MediaPicker
+        label="Presentation"
+        accept="document"
+        selectedAssetId={presentation?.id ?? draft.presentationMediaId}
+        onSelect={setPresentation}
       />
       <label className="flex flex-col gap-1 text-sm text-slate-700">
         Session (optional)

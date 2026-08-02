@@ -233,6 +233,15 @@ export default function AdminRegistrations() {
     load()
   }
 
+  // Excludes 'invited_participant' — that's only ever set via Invite in
+  // person above, which also resets attendance mode/confirmation correctly.
+  // This picker never touches those, so routing it through here instead
+  // would leave attendanceMode/confirmationStatus stale.
+  async function handleChangeRole(id: string, role: Registration['participationRole']) {
+    await updateRegistration(id, { participationRole: role })
+    load()
+  }
+
   async function handleUninvite(id: string) {
     if (!symposium) return
     if (!confirm("Revoke this person's in-person invitation? They'll move back to online.")) return
@@ -341,6 +350,19 @@ export default function AdminRegistrations() {
                     <button onClick={() => handleUninvite(r.id)} className="text-red-600 underline">
                       Revoke invitation
                     </button>
+                  )}
+                  {r.status === 'approved' && r.participationRole !== 'invited_participant' && (
+                    <select
+                      value={r.participationRole}
+                      onChange={(e) => handleChangeRole(r.id, e.target.value as Registration['participationRole'])}
+                      className="rounded-md border border-sand-200 px-2 py-1 text-xs"
+                    >
+                      {(['public_participant', 'exhibitor', 'facilitator', 'presenter', 'vip'] as const).map((role) => (
+                        <option key={role} value={role}>
+                          {ROLE_LABEL[role]}
+                        </option>
+                      ))}
+                    </select>
                   )}
                   <button
                     onClick={() => startLogistics(r)}

@@ -316,11 +316,36 @@ export interface KnowledgeBaseDocument {
 // INTO this collection rather than exposing Registration itself.
 export interface Speaker {
   id: string
+  // Set when the presenter submitted this themselves from their account
+  // (project-docs meeting notes 2026-07-31: presenters can submit their own
+  // bio/image/presentation); admin-added historical speakers may omit it.
+  userId?: string
   name: string
   title?: string
   bio?: string
   photoMediaId?: string
+  presentationMediaId?: string
   sessionId?: string
+  order: number
+  visible: boolean
+}
+
+// Exhibitors and facilitators submit the same shape (logo, blurb, image) —
+// see project-docs meeting notes 2026-07-31 and the GDEnv nav-planning email
+// grouping speakers/facilitators/exhibitors under one future "Partners" page.
+// Presenters stay on the separate Speaker collection above rather than
+// merging in, since that already has real usage (Programme session linking).
+export type PartnerCategory = 'exhibitor' | 'facilitator'
+
+export interface PartnerProfile {
+  id: string
+  userId?: string
+  category: PartnerCategory
+  name: string
+  blurb?: string
+  logoMediaId?: string
+  imageMediaId?: string
+  websiteUrl?: string
   order: number
   visible: boolean
 }

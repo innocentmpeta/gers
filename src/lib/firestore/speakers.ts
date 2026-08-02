@@ -22,3 +22,23 @@ export async function updateSpeaker(id: string, data: Partial<Speaker>): Promise
 export async function deleteSpeaker(id: string): Promise<void> {
   await removeDoc(col, id)
 }
+
+export async function getSpeakerByUserId(userId: string): Promise<Speaker | null> {
+  const all = await listWhere<Speaker>(col, [where('userId', '==', userId)])
+  return all[0] ?? null
+}
+
+export type OwnSpeakerProfileInput = Pick<Speaker, 'name' | 'title' | 'bio' | 'photoMediaId' | 'presentationMediaId'>
+
+// Self-service — a presenter submitting/editing their own public profile.
+// New submissions start hidden (visible: false) until an admin reviews them,
+// same as admin-added speakers default to visible: true only deliberately.
+export async function upsertOwnSpeakerProfile(userId: string, data: OwnSpeakerProfileInput): Promise<void> {
+  const existing = await getSpeakerByUserId(userId)
+  if (existing) {
+    await updateSpeaker(existing.id, data)
+  } else {
+    const count = (await listSpeakers()).length
+    await createDoc<Speaker>(col, { ...data, userId, order: count, visible: false })
+  }
+}

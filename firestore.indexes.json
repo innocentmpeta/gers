@@ -41,6 +41,23 @@
         { "fieldPath": "confirmationStatus", "order": "ASCENDING" },
         { "fieldPath": "waitlistedAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "partnerProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "partnerProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "visible", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

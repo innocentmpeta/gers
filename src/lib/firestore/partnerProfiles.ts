@@ -1,0 +1,51 @@
+import { where, orderBy, listWhere, createDoc, updateDocById, removeDoc } from './crud'
+import type { PartnerCategory, PartnerProfile } from '../../types/models'
+
+const col = 'partnerProfiles'
+
+export async function listPartners(category: PartnerCategory): Promise<PartnerProfile[]> {
+  return listWhere<PartnerProfile>(col, [where('category', '==', category), orderBy('order', 'asc')])
+}
+
+export async function listVisiblePartners(category: PartnerCategory): Promise<PartnerProfile[]> {
+  return listWhere<PartnerProfile>(col, [
+    where('category', '==', category),
+    where('visible', '==', true),
+    orderBy('order', 'asc'),
+  ])
+}
+
+export async function createPartner(data: Omit<PartnerProfile, 'id'>): Promise<string> {
+  return createDoc<PartnerProfile>(col, data)
+}
+
+export async function updatePartner(id: string, data: Partial<PartnerProfile>): Promise<void> {
+  await updateDocById(col, id, data)
+}
+
+export async function deletePartner(id: string): Promise<void> {
+  await removeDoc(col, id)
+}
+
+export async function getPartnerByUserId(userId: string): Promise<PartnerProfile | null> {
+  const all = await listWhere<PartnerProfile>(col, [where('userId', '==', userId)])
+  return all[0] ?? null
+}
+
+export type OwnPartnerProfileInput = Pick<PartnerProfile, 'name' | 'blurb' | 'logoMediaId' | 'imageMediaId' | 'websiteUrl'>
+
+// Self-service — an exhibitor/facilitator submitting/editing their own public
+// profile. New submissions start hidden until an admin reviews them.
+export async function upsertOwnPartnerProfile(
+  userId: string,
+  category: PartnerCategory,
+  data: OwnPartnerProfileInput
+): Promise<void> {
+  const existing = await getPartnerByUserId(userId)
+  if (existing) {
+    await updatePartner(existing.id, data)
+  } else {
+    const count = (await listPartners(category)).length
+    await createDoc<PartnerProfile>(col, { ...data, userId, category, order: count, visible: false })
+  }
+}

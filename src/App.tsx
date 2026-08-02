@@ -27,6 +27,7 @@ import AdminContent from './features/admin/pages/Content'
 import PageEditor from './features/admin/cms/PageEditor'
 import AdminProgramme from './features/admin/pages/Programme'
 import AdminSpeakers from './features/admin/pages/Speakers'
+import AdminPartners from './features/admin/pages/Partners'
 import AdminRegistrations from './features/admin/pages/Registrations'
 import AdminAbstracts from './features/admin/pages/Abstracts'
 import AdminPrompts from './features/admin/pages/Prompts'
@@ -71,6 +72,7 @@ function App() {
                 <Route path="programme" element={<AdminProgramme />} />
               </Route>
               <Route path="speakers" element={<AdminSpeakers />} />
+              <Route path="partners" element={<AdminPartners />} />
               <Route element={<RequireRole capability="registrations" />}>
                 <Route path="registrations" element={<AdminRegistrations />} />
                 <Route path="abstracts" element={<AdminAbstracts />} />
