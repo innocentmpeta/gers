@@ -29,8 +29,13 @@ dist-ssr
 !.env.example
 *serviceAccount*
 *firebase-adminsdk*
+*-key.json
 *.pem
 *.key
+
+# Local data backups (Firestore export dumps, etc.) — contain user PII
+*-backup/
+*.backup.json
 
 # Firebase local state
 .firebase/
