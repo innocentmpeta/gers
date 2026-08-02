@@ -23,6 +23,7 @@ export default function AdminAbstracts() {
   const [submissions, setSubmissions] = useState<AbstractSubmission[]>([])
   const [users, setUsers] = useState<Map<string, User>>(new Map())
   const [filter, setFilter] = useState<StatusFilter>('pending')
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
   async function load() {
@@ -42,7 +43,17 @@ export default function AdminAbstracts() {
     load()
   }
 
-  const visible = submissions.filter((s) => filter === 'all' || s.status === filter)
+  const query = search.trim().toLowerCase()
+  const visible = submissions.filter((s) => {
+    if (filter !== 'all' && s.status !== filter) return false
+    if (!query) return true
+    const user = users.get(s.userId)
+    const haystack = [s.title, s.track, user?.name, user?.surname, user?.email, s.affiliation]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+    return haystack.includes(query)
+  })
 
   if (loading) {
     return (
@@ -60,18 +71,27 @@ export default function AdminAbstracts() {
         with their role pre-set to Presenter.
       </p>
 
-      <div className="mt-6 flex gap-2 text-sm">
-        {(['pending', 'accepted', 'declined', 'all'] as StatusFilter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`rounded-full px-3 py-1.5 ${
-              filter === f ? 'bg-ink-900 text-sand-50' : 'bg-sand-100 text-slate-700 hover:bg-sand-200'
-            }`}
-          >
-            {f === 'all' ? 'All' : STATUS_LABEL[f]}
-          </button>
-        ))}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="flex gap-2 text-sm">
+          {(['pending', 'accepted', 'declined', 'all'] as StatusFilter[]).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`rounded-full px-3 py-1.5 ${
+                filter === f ? 'bg-ink-900 text-sand-50' : 'bg-sand-100 text-slate-700 hover:bg-sand-200'
+              }`}
+            >
+              {f === 'all' ? 'All' : STATUS_LABEL[f]}
+            </button>
+          ))}
+        </div>
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by title, track, or submitter…"
+          className="ml-auto min-w-[240px] rounded-full border border-sand-200 px-4 py-1.5 text-sm"
+        />
       </div>
 
       <div className="mt-6 flex flex-col gap-3">

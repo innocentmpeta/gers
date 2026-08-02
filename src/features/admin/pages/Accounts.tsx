@@ -128,6 +128,7 @@ export default function AdminAccounts() {
   const [symposium, setSymposium] = useState<Symposium | null>(null)
   const [registrationsByUser, setRegistrationsByUser] = useState<Map<string, Registration>>(new Map())
   const [attendanceBusyId, setAttendanceBusyId] = useState<string | null>(null)
+  const [userSearch, setUserSearch] = useState('')
 
   async function load() {
     const [inv, allUsers, sym, regs] = await Promise.all([
@@ -219,6 +220,13 @@ export default function AdminAccounts() {
 
   const canRegisterAttendance = !draft.systemRole || draft.registerAsAttendee
   const formValid = draft.email && draft.name && draft.surname && (draft.systemRole || draft.registerAsAttendee)
+
+  const userQuery = userSearch.trim().toLowerCase()
+  const visibleUsers = userQuery
+    ? users.filter((u) =>
+        [u.name, u.surname, u.email, u.organization].filter(Boolean).join(' ').toLowerCase().includes(userQuery)
+      )
+    : users
 
   return (
     <div className="mx-auto max-w-4xl px-8 py-10">
@@ -450,14 +458,28 @@ export default function AdminAccounts() {
         ))}
       </div>
 
-      <h2 className="mt-10 text-lg font-semibold text-ink-900">All users</h2>
-      <p className="mt-1 text-sm text-slate-500">
-        Change an existing account's system role, or toggle whether they're also registered to
-        attend {symposium?.name ?? 'the symposium'}.
-      </p>
+      <div className="mt-10 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-ink-900">All users</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Change an existing account's system role, or toggle whether they're also registered to
+            attend {symposium?.name ?? 'the symposium'}.
+          </p>
+        </div>
+        <input
+          type="search"
+          value={userSearch}
+          onChange={(e) => setUserSearch(e.target.value)}
+          placeholder="Search by name or email…"
+          className="min-w-[240px] rounded-full border border-sand-200 px-4 py-1.5 text-sm"
+        />
+      </div>
       <div className="mt-3 flex flex-col divide-y divide-sand-200 rounded-lg border border-sand-200 bg-white">
         {users.length === 0 && <p className="px-5 py-4 text-sm text-slate-400">No accounts yet.</p>}
-        {users.map((user) => {
+        {users.length > 0 && visibleUsers.length === 0 && (
+          <p className="px-5 py-4 text-sm text-slate-400">No users match "{userSearch}".</p>
+        )}
+        {visibleUsers.map((user) => {
           const registration = registrationsByUser.get(user.id)
           return (
             <div key={user.id} className="flex items-center justify-between gap-4 px-5 py-4">
