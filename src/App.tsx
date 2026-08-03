@@ -49,7 +49,8 @@ function App() {
             <Route path="symposium/speakers" element={<Speakers />} />
             <Route path="symposium/exhibition" element={<Exhibition />} />
             <Route path="symposium/student-track" element={<StudentTrack />} />
-            <Route path="partners" element={<Partners />} />
+            <Route path="symposium/partners" element={<Partners />} />
+            <Route path="partners" element={<Navigate to="/symposium/partners" replace />} />
             <Route path="past-symposiums" element={<PastSymposiums />} />
             <Route path="faq" element={<Faq />} />
             <Route path="register" element={<RegisterIntro />} />

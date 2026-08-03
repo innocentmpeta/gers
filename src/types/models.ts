@@ -375,15 +375,16 @@ export interface Speaker {
   visible: boolean
 }
 
-// Exhibitors, facilitators, and sponsors all submit the same shape (logo,
-// blurb, image) — see project-docs meeting notes 2026-07-31 and the GDEnv
+// Exhibitors, facilitators, and partners all submit the same shape (logo,
+// blurb, website) — see project-docs meeting notes 2026-07-31 and the GDEnv
 // nav-planning email grouping speakers/facilitators/exhibitors under one
-// future "Partners" page. Sponsors are typically added directly by admins
-// rather than self-submitted (a sponsoring organisation doesn't necessarily
-// have an attendee registration behind it). Presenters stay on the separate
-// Speaker collection above rather than merging in, since that already has
-// real usage (Programme session linking).
-export type PartnerCategory = 'exhibitor' | 'facilitator' | 'sponsor'
+// "Partners" page. 'partner' represents an organisation a presenter comes
+// from (besides GDEnv/UJ, which stay static in the footer) — a presenter's
+// self-submission also upserts one of these alongside their Speaker profile,
+// so their organisation's logo can appear on the Partners page and in the
+// footer without a separate admin step. Exhibitor/facilitator partner
+// profiles can also be added directly by admins, not just self-submitted.
+export type PartnerCategory = 'exhibitor' | 'facilitator' | 'partner'
 
 export interface PartnerProfile {
   id: string

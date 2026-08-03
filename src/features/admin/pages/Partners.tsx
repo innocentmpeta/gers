@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import MediaPicker from '../../../components/cms/MediaPicker'
+import { RICH_TEXT_HINT } from '../../../components/RichText'
 import {
   listPartners,
   createPartner,
@@ -11,7 +12,7 @@ import type { MediaAsset, PartnerCategory, PartnerProfile } from '../../../types
 const CATEGORY_LABEL: Record<PartnerCategory, string> = {
   exhibitor: 'Exhibitors',
   facilitator: 'Facilitators',
-  sponsor: 'Sponsors',
+  partner: 'Partners',
 }
 
 type Draft = {
@@ -119,7 +120,7 @@ export default function AdminPartners() {
       </p>
 
       <div className="mt-6 flex gap-2 text-sm">
-        {(['exhibitor', 'facilitator', 'sponsor'] as PartnerCategory[]).map((c) => (
+        {(['exhibitor', 'facilitator', 'partner'] as PartnerCategory[]).map((c) => (
           <button
             key={c}
             onClick={() => setCategory(c)}
@@ -249,6 +250,7 @@ function PartnerForm({
           rows={3}
           className="rounded-md border border-sand-200 px-3 py-2"
         />
+        <span className="text-xs text-slate-400">{RICH_TEXT_HINT}</span>
       </label>
       <MediaPicker label="Logo" accept="image" selectedAssetId={logo?.id ?? draft.logoMediaId} onSelect={setLogo} />
       <MediaPicker label="Image" accept="image" selectedAssetId={image?.id ?? draft.imageMediaId} onSelect={setImage} />

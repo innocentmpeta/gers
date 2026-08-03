@@ -1,4 +1,5 @@
 import ItemLink from './ItemLink'
+import RichText from '../RichText'
 import type { Item, MediaAsset } from '../../types/models'
 
 export default function GridLayout({ items, mediaMap }: { items: Item[]; mediaMap: Record<string, MediaAsset> }) {
@@ -20,7 +21,11 @@ export default function GridLayout({ items, mediaMap }: { items: Item[]; mediaMa
                 <span className="mb-1 text-xs uppercase tracking-wide text-gold-600">{item.tag}</span>
               )}
               <h3 className="text-lg text-ink-900 group-hover:underline">{item.title}</h3>
-              {item.bodyShort && <p className="mt-1 text-sm text-slate-500">{item.bodyShort}</p>}
+              {item.bodyShort && (
+                <p className="mt-1 text-sm text-slate-500">
+                  <RichText text={item.bodyShort} />
+                </p>
+              )}
             </div>
           </ItemLink>
         )

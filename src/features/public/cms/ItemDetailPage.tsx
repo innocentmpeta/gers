@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getItemByDetailSlug } from '../../../lib/firestore/items'
 import { getMediaAsset } from '../../../lib/firestore/media'
+import RichText from '../../../components/RichText'
 import type { Item, MediaAsset } from '../../../types/models'
 
 export default function ItemDetailPage() {
@@ -45,7 +46,11 @@ export default function ItemDetailPage() {
         <img src={heroImage.fileUrl} alt={heroImage.altText} className="mt-6 w-full rounded-lg object-cover" />
       )}
 
-      {item.bodyFull && <p className="mt-6 whitespace-pre-line text-slate-700">{item.bodyFull}</p>}
+      {item.bodyFull && (
+        <p className="mt-6 text-slate-700">
+          <RichText text={item.bodyFull} />
+        </p>
+      )}
 
       {gallery.length > 0 && (
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">

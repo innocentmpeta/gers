@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import MediaPicker from '../../components/cms/MediaPicker'
+import { RICH_TEXT_HINT } from '../../components/RichText'
 import { getSpeakerByUserId, upsertOwnSpeakerProfile } from '../../lib/firestore/speakers'
 import { getPartnerByUserId, upsertOwnPartnerProfile } from '../../lib/firestore/partnerProfiles'
 import type { MediaAsset, ParticipationRole, PartnerCategory } from '../../types/models'
@@ -7,11 +8,16 @@ import type { MediaAsset, ParticipationRole, PartnerCategory } from '../../types
 const inputClass =
   'rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700'
 const labelClass = 'flex flex-col gap-1 text-sm text-slate-700'
+const hintClass = 'text-xs text-slate-400'
 
 // Shown on the account page once a registration holds a role that gets a
 // public profile (project-docs meeting notes 2026-07-31: presenters submit
 // bio/image/presentation, exhibitors/facilitators submit logo/blurb/image).
-// Submissions always start hidden — an admin has to review and publish them.
+// Presenters also submit their organisation's profile (logo/blurb/website)
+// alongside their personal one — organisers confirmed partner organisations
+// are the ones sending speakers, besides GDEnv/UJ, so this is what feeds
+// both the Partners page and the footer logos. Submissions always start
+// hidden — an admin has to review and publish them.
 export default function RoleProfileEditor({
   userId,
   role,
@@ -21,6 +27,7 @@ export default function RoleProfileEditor({
 }) {
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = useState(false)
+  const [orgVisible, setOrgVisible] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,19 +46,39 @@ export default function RoleProfileEditor({
   const [imageId, setImageId] = useState<string | undefined>(undefined)
   const [websiteUrl, setWebsiteUrl] = useState('')
 
+  // Presenter-only: their organisation's own profile, separate from their
+  // personal one above — a presenter's org uses this block instead of the
+  // shared name/bio/logo/website fields above (those stay exhibitor/
+  // facilitator-only), since a presenter needs both at once.
+  const [orgName, setOrgName] = useState('')
+  const [orgBlurb, setOrgBlurb] = useState('')
+  const [orgLogo, setOrgLogo] = useState<MediaAsset | null>(null)
+  const [orgLogoId, setOrgLogoId] = useState<string | undefined>(undefined)
+  const [orgWebsiteUrl, setOrgWebsiteUrl] = useState('')
+
   const isPresenter = role === 'presenter'
 
   useEffect(() => {
     async function load() {
       if (isPresenter) {
-        const existing = await getSpeakerByUserId(userId)
-        if (existing) {
-          setName(existing.name)
-          setTitle(existing.title ?? '')
-          setBio(existing.bio ?? '')
-          setPhotoId(existing.photoMediaId)
-          setPresentationId(existing.presentationMediaId)
-          setVisible(existing.visible)
+        const [existingSpeaker, existingOrg] = await Promise.all([
+          getSpeakerByUserId(userId),
+          getPartnerByUserId(userId),
+        ])
+        if (existingSpeaker) {
+          setName(existingSpeaker.name)
+          setTitle(existingSpeaker.title ?? '')
+          setBio(existingSpeaker.bio ?? '')
+          setPhotoId(existingSpeaker.photoMediaId)
+          setPresentationId(existingSpeaker.presentationMediaId)
+          setVisible(existingSpeaker.visible)
+        }
+        if (existingOrg) {
+          setOrgName(existingOrg.name)
+          setOrgBlurb(existingOrg.blurb ?? '')
+          setOrgLogoId(existingOrg.logoMediaId)
+          setOrgWebsiteUrl(existingOrg.websiteUrl ?? '')
+          setOrgVisible(existingOrg.visible)
         }
       } else {
         const existing = await getPartnerByUserId(userId)
@@ -82,6 +109,15 @@ export default function RoleProfileEditor({
           photoMediaId: photo?.id ?? photoId,
           presentationMediaId: presentation?.id ?? presentationId,
         })
+        if (orgName) {
+          await upsertOwnPartnerProfile(userId, 'partner', {
+            name: orgName,
+            blurb: orgBlurb || undefined,
+            logoMediaId: orgLogo?.id ?? orgLogoId,
+            imageMediaId: undefined,
+            websiteUrl: orgWebsiteUrl || undefined,
+          })
+        }
       } else {
         await upsertOwnPartnerProfile(userId, role as PartnerCategory, {
           name,
@@ -126,6 +162,7 @@ export default function RoleProfileEditor({
         <label className={labelClass}>
           {isPresenter ? 'Bio' : 'Blurb'}
           <textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} className={inputClass} />
+          <span className={hintClass}>{RICH_TEXT_HINT}</span>
         </label>
 
         {isPresenter ? (
@@ -148,7 +185,53 @@ export default function RoleProfileEditor({
             </label>
           </>
         )}
+      </div>
 
+      {isPresenter && (
+        <div className="mt-10 border-t border-sand-200 pt-8">
+          <h2 className="text-lg font-semibold text-ink-900">Your organization</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {orgName
+              ? orgVisible
+                ? "Live on the Partners page and in the footer — changes you save here go back to pending review."
+                : 'Pending admin review — not on the site yet.'
+              : "Shown on the Partners page and in the site footer. Leave the name blank if your organization shouldn't be listed."}
+          </p>
+
+          <div className="mt-4 flex flex-col gap-4">
+            <label className={labelClass}>
+              Organization name
+              <input value={orgName} onChange={(e) => setOrgName(e.target.value)} className={inputClass} />
+            </label>
+            <MediaPicker
+              label="Organization logo"
+              accept="image"
+              selectedAssetId={orgLogo?.id ?? orgLogoId}
+              onSelect={setOrgLogo}
+            />
+            <label className={labelClass}>
+              About your organization
+              <textarea
+                rows={3}
+                value={orgBlurb}
+                onChange={(e) => setOrgBlurb(e.target.value)}
+                className={inputClass}
+              />
+              <span className={hintClass}>{RICH_TEXT_HINT}</span>
+            </label>
+            <label className={labelClass}>
+              Website (optional)
+              <input
+                value={orgWebsiteUrl}
+                onChange={(e) => setOrgWebsiteUrl(e.target.value)}
+                className={inputClass}
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-8 flex flex-col gap-3">
         {error && <p className="text-sm text-red-600">{error}</p>}
         {saved && !error && <p className="text-sm text-green-600">Saved.</p>}
 

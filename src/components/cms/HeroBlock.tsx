@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { getMediaAsset } from '../../lib/firestore/media'
 import { useHeroOverlay } from '../../lib/heroOverlay'
+import RichText from '../RichText'
 import type { Hero, MediaAsset } from '../../types/models'
 
 function formatDateRange(start?: string, end?: string): string | null {
@@ -96,7 +97,11 @@ export default function HeroBlock({ hero, size = 'compact' }: HeroBlockProps) {
           <p className="text-sm uppercase tracking-wide text-gold-500">{hero.eyebrowText}</p>
         )}
         {hero.headline && <h1 className="mt-2 max-w-2xl text-5xl text-sand-50">{hero.headline}</h1>}
-        {hero.subtext && <p className="mt-4 max-w-xl text-slate-200">{hero.subtext}</p>}
+        {hero.subtext && (
+          <p className="mt-4 max-w-xl text-slate-200">
+            <RichText text={hero.subtext} />
+          </p>
+        )}
         {dateRange && <p className="mt-3 text-xl font-medium text-gold-500">{dateRange}</p>}
         {(hero.cta1Label || hero.cta2Label) && (
           <div className="mt-6 flex gap-3">

@@ -7,7 +7,7 @@ export async function listPartners(category: PartnerCategory): Promise<PartnerPr
   return listWhere<PartnerProfile>(col, [where('category', '==', category), orderBy('order', 'asc')])
 }
 
-const ALL_CATEGORIES: PartnerCategory[] = ['exhibitor', 'facilitator', 'sponsor']
+const ALL_CATEGORIES: PartnerCategory[] = ['exhibitor', 'facilitator', 'partner']
 
 // Every category, unfiltered — used by the Dashboard's pending-review count,
 // which doesn't care which category a hidden self-submission landed in.
@@ -44,7 +44,9 @@ export async function getPartnerByUserId(userId: string): Promise<PartnerProfile
 export type OwnPartnerProfileInput = Pick<PartnerProfile, 'name' | 'blurb' | 'logoMediaId' | 'imageMediaId' | 'websiteUrl'>
 
 // Self-service — an exhibitor/facilitator submitting/editing their own public
-// profile. New submissions start hidden until an admin reviews them.
+// profile, or a presenter submitting/editing their organisation's profile
+// alongside their personal Speaker one. New submissions start hidden until
+// an admin reviews them.
 export async function upsertOwnPartnerProfile(
   userId: string,
   category: PartnerCategory,

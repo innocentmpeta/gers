@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import ItemLink from './ItemLink'
+import RichText from '../RichText'
 import type { Item, MediaAsset } from '../../types/models'
 
 export default function FeatureRowsLayout({ items, mediaMap }: { items: Item[]; mediaMap: Record<string, MediaAsset> }) {
@@ -22,7 +23,11 @@ export default function FeatureRowsLayout({ items, mediaMap }: { items: Item[]; 
                 <span className="text-xs uppercase tracking-wide text-gold-600">{item.tag}</span>
               )}
               <h3 className="mt-1 text-2xl text-ink-900">{item.title}</h3>
-              {item.bodyShort && <p className="mt-3 text-slate-600">{item.bodyShort}</p>}
+              {item.bodyShort && (
+                <p className="mt-3 text-slate-600">
+                  <RichText text={item.bodyShort} />
+                </p>
+              )}
             </div>
           </ItemLink>
         )

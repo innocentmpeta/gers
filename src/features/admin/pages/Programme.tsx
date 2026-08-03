@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { RICH_TEXT_HINT } from '../../../components/RichText'
 import { listSessions, createSession, updateSession, deleteSession } from '../../../lib/firestore/sessions'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import type { Session, Symposium } from '../../../types/models'
@@ -189,6 +190,7 @@ function SessionForm({
           rows={2}
           className="rounded-md border border-sand-200 px-3 py-2"
         />
+        <span className="text-xs text-slate-400">{RICH_TEXT_HINT}</span>
       </label>
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-sm text-slate-700">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import HeroBlock from '../../../components/cms/HeroBlock'
+import RichText from '../../../components/RichText'
 import { usePageHero } from '../cms/usePageHero'
 import { getHomeContent } from '../../../lib/firestore/homeContent'
 import { getMediaAsset } from '../../../lib/firestore/media'
@@ -69,7 +70,11 @@ export default function Home() {
                 <p className="text-sm uppercase tracking-wide text-gold-600">{content.introEyebrow}</p>
               )}
               {content?.introHeading && <h2 className="mt-2 text-3xl">{content.introHeading}</h2>}
-              {content?.introBody && <p className="mt-3 text-slate-600">{content.introBody}</p>}
+              {content?.introBody && (
+                <p className="mt-3 text-slate-600">
+                  <RichText text={content.introBody} />
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -84,7 +89,11 @@ export default function Home() {
                   <p className="text-sm uppercase tracking-wide text-gold-600">{content.exploreEyebrow}</p>
                 )}
                 {content?.exploreHeading && <h2 className="mt-2 text-3xl">{content.exploreHeading}</h2>}
-                {content?.exploreSubtext && <p className="mt-3 text-slate-600">{content.exploreSubtext}</p>}
+                {content?.exploreSubtext && (
+                  <p className="mt-3 text-slate-600">
+                    <RichText text={content.exploreSubtext} />
+                  </p>
+                )}
               </div>
             )}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -107,7 +116,11 @@ export default function Home() {
                     </div>
                     <div className="flex flex-1 flex-col p-4">
                       <h3 className="text-lg text-ink-900 group-hover:underline">{card.title}</h3>
-                      {card.body && <p className="mt-1 text-sm text-slate-500">{card.body}</p>}
+                      {card.body && (
+                        <p className="mt-1 text-sm text-slate-500">
+                          <RichText text={card.body} />
+                        </p>
+                      )}
                     </div>
                   </CardLink>
                 ))}
@@ -123,7 +136,11 @@ export default function Home() {
               <p className="text-sm uppercase tracking-wide text-gold-500">{content.ctaEyebrow}</p>
             )}
             {content?.ctaHeading && <h2 className="mt-2 text-3xl text-sand-50">{content.ctaHeading}</h2>}
-            {content?.ctaSubtext && <p className="mt-3 text-slate-200">{content.ctaSubtext}</p>}
+            {content?.ctaSubtext && (
+              <p className="mt-3 text-slate-200">
+                <RichText text={content.ctaSubtext} />
+              </p>
+            )}
             {content?.ctaButtonLabel && content?.ctaButtonLink && (
               <CardLink
                 link={content.ctaButtonLink}

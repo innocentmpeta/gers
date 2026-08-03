@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import HeroBlock from '../../../components/cms/HeroBlock'
+import RichText from '../../../components/RichText'
 import { usePageHero } from '../cms/usePageHero'
 import { listFaqItems } from '../../../lib/firestore/faqItems'
 import type { FaqItem } from '../../../types/models'
@@ -32,7 +33,9 @@ export default function Faq() {
                   {item.question}
                   <span className="ml-4 text-gold-600 transition-transform group-open:rotate-45">+</span>
                 </summary>
-                <p className="mt-2 text-slate-600">{item.answer}</p>
+                <p className="mt-2 text-slate-600">
+                  <RichText text={item.answer} />
+                </p>
               </details>
             ))}
           </div>

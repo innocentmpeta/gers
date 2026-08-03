@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import MediaPicker from '../../../components/cms/MediaPicker'
+import { RICH_TEXT_HINT } from '../../../components/RichText'
 import { listSpeakers, createSpeaker, updateSpeaker, deleteSpeaker } from '../../../lib/firestore/speakers'
 import { listSessions } from '../../../lib/firestore/sessions'
 import type { MediaAsset, Session, Speaker } from '../../../types/models'
@@ -240,6 +241,7 @@ function SpeakerForm({
           rows={3}
           className="rounded-md border border-sand-200 px-3 py-2"
         />
+        <span className="text-xs text-slate-400">{RICH_TEXT_HINT}</span>
       </label>
       <MediaPicker
         label="Photo"

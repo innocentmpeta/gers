@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react'
 import HeroBlock from '../../../components/cms/HeroBlock'
+import RichText from '../../../components/RichText'
 import { usePageHero } from '../cms/usePageHero'
 import { listVisiblePartners } from '../../../lib/firestore/partnerProfiles'
 import { getMediaAsset } from '../../../lib/firestore/media'
 import type { MediaAsset, PartnerCategory, PartnerProfile } from '../../../types/models'
 
 const CATEGORY_LABEL: Record<PartnerCategory, string> = {
+  partner: 'Partners',
   exhibitor: 'Exhibitors',
   facilitator: 'Facilitators',
-  sponsor: 'Sponsors',
 }
 
 export default function Partners() {
   const { hero, loading: heroLoading } = usePageHero('partners')
-  const [category, setCategory] = useState<PartnerCategory>('exhibitor')
+  const [category, setCategory] = useState<PartnerCategory>('partner')
   const [partners, setPartners] = useState<PartnerProfile[]>([])
   const [logos, setLogos] = useState<Record<string, MediaAsset>>({})
   const [loading, setLoading] = useState(true)
@@ -40,7 +41,7 @@ export default function Partners() {
       <HeroBlock hero={hero} />
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="flex gap-2 text-sm">
-          {(['exhibitor', 'facilitator', 'sponsor'] as PartnerCategory[]).map((c) => (
+          {(['partner', 'exhibitor', 'facilitator'] as PartnerCategory[]).map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}
@@ -72,7 +73,11 @@ export default function Partners() {
                   </div>
                   <div className="p-5">
                     <p className="text-lg text-ink-900">{partner.name}</p>
-                    {partner.blurb && <p className="mt-2 text-sm text-slate-500">{partner.blurb}</p>}
+                    {partner.blurb && (
+                      <p className="mt-2 text-sm text-slate-500">
+                        <RichText text={partner.blurb} />
+                      </p>
+                    )}
                     {partner.websiteUrl && (
                       <a
                         href={partner.websiteUrl}

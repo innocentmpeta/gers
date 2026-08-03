@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import MediaPicker from '../../../components/cms/MediaPicker'
+import { RICH_TEXT_HINT } from '../../../components/RichText'
 import { getHomeContent, saveHomeContent } from '../../../lib/firestore/homeContent'
 import type { HomeExploreCard, MediaAsset } from '../../../types/models'
 
@@ -127,6 +128,7 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
               rows={3}
               className="rounded-md border border-sand-200 px-3 py-2"
             />
+            <span className="text-xs text-slate-400">{RICH_TEXT_HINT}</span>
           </label>
           <MediaPicker
             label="Image"
@@ -188,6 +190,7 @@ export default function HomeContentEditor({ pageId }: { pageId: string }) {
                     rows={2}
                     className="rounded-md border border-sand-200 px-3 py-2"
                   />
+                  <span className="text-xs text-slate-400">{RICH_TEXT_HINT}</span>
                 </label>
                 <label className="flex flex-col gap-1 text-sm text-slate-700">
                   Link (e.g. /programme, or a full https:// URL)

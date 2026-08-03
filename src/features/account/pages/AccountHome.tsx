@@ -57,19 +57,27 @@ export default function AccountHome() {
   const [actionPending, setActionPending] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
+  // Registration and abstracts are independent — one query failing (e.g. a
+  // missing Firestore index) shouldn't blank out the whole page when the
+  // other half loaded fine, so these are awaited separately rather than via
+  // a single Promise.all.
   const load = useCallback(async () => {
     if (!firebaseUser) return
     try {
       const s = await getDefaultSymposium()
-      const [reg, abs] = await Promise.all([
-        s ? getRegistrationForUser(firebaseUser.uid, s.id) : Promise.resolve(null),
-        listUserAbstractSubmissions(firebaseUser.uid),
-      ])
       setSymposium(s)
-      setRegistration(reg)
-      setAbstracts(abs)
+      try {
+        setRegistration(s ? await getRegistrationForUser(firebaseUser.uid, s.id) : null)
+      } catch {
+        setLoadError('Could not load your registration details. Please refresh the page.')
+      }
+      try {
+        setAbstracts(await listUserAbstractSubmissions(firebaseUser.uid))
+      } catch {
+        // Non-critical — the abstracts list just stays empty.
+      }
     } catch {
-      setLoadError('Could not load your registration details. Please refresh the page.')
+      setLoadError('Could not load your account details. Please refresh the page.')
     } finally {
       setLoading(false)
     }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import HeroBlock from '../../../components/cms/HeroBlock'
-import SymposiumSubNav from '../../../components/SymposiumSubNav'
+import RichText from '../../../components/RichText'
 import { usePageHero } from '../cms/usePageHero'
 import { listVisibleSpeakers } from '../../../lib/firestore/speakers'
 import { getMediaAsset } from '../../../lib/firestore/media'
@@ -31,7 +31,6 @@ export default function Speakers() {
   return (
     <div>
       <HeroBlock hero={hero} />
-      <SymposiumSubNav />
       <div className="mx-auto max-w-6xl px-6 py-16">
         {speakers.length === 0 ? (
           <p className="text-slate-500">Speakers will be announced here soon.</p>
@@ -49,7 +48,11 @@ export default function Speakers() {
                   <div className="p-5">
                     <p className="text-lg text-ink-900">{speaker.name}</p>
                     {speaker.title && <p className="mt-1 text-sm text-gold-600">{speaker.title}</p>}
-                    {speaker.bio && <p className="mt-2 text-sm text-slate-500">{speaker.bio}</p>}
+                    {speaker.bio && (
+                      <p className="mt-2 text-sm text-slate-500">
+                        <RichText text={speaker.bio} />
+                      </p>
+                    )}
                   </div>
                 </div>
               )
