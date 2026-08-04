@@ -99,6 +99,7 @@ export default function Header() {
           <div className="group relative py-1">
             <NavLink
               to="/symposium"
+              onClick={(e) => e.currentTarget.blur()}
               className={({ isActive }) =>
                 clsx('text-sand-100 transition-colors hover:text-sand-50', isActive && 'text-sand-50 font-medium')
               }
@@ -111,6 +112,7 @@ export default function Header() {
                   key={item.to}
                   to={item.to}
                   end={item.end}
+                  onClick={(e) => e.currentTarget.blur()}
                   className={({ isActive }) =>
                     clsx(
                       'block px-4 py-2 text-base text-sand-100 transition-colors hover:bg-ink-800 hover:text-sand-50',
