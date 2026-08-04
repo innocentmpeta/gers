@@ -11,14 +11,14 @@ const labelClass = 'flex flex-col gap-1 text-sm text-slate-700'
 const hintClass = 'text-xs text-slate-400'
 
 // Shown on the account page once a registration holds a role that gets a
-// public profile. Per Stacey Bailie's 2026-08-04 email: presenters and
-// facilitators ("Experts") both submit a personal profile — bio/photo, plus
-// slides for presenters only — and it shows on the Experts page. Exhibitors
-// submit an organisation-first profile instead (their card on the Exhibition
-// page leads with the org, their own name at the bottom). Either way, an
-// organisation profile also gets upserted so it shows on the unified
-// Partners page and in the footer. Submissions always start hidden — an
-// admin has to review and publish them.
+// public profile. Presenters and facilitators both submit a personal
+// profile — bio/photo, plus slides for presenters only — that shows on
+// their respective (separate) public page, split by the `role` field.
+// Exhibitors submit an organisation-first profile instead (their card on
+// the Exhibition page leads with the org, their own name at the bottom).
+// Either way, an organisation profile also gets upserted so it shows on the
+// unified Partners page and in the footer. Submissions always start
+// hidden — an admin has to review and publish them.
 export default function RoleProfileEditor({
   userId,
   role,
@@ -106,6 +106,7 @@ export default function RoleProfileEditor({
     try {
       if (isExpert) {
         await upsertOwnSpeakerProfile(userId, {
+          role: isPresenter ? 'presenter' : 'facilitator',
           name,
           title: title || undefined,
           bio: bio || undefined,

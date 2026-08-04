@@ -361,12 +361,19 @@ export interface KnowledgeBaseDocument {
 // Admin curates this directly for now; auto-populating it when a presenter
 // registration is confirmed is a natural Phase 5/6 enhancement that writes
 // INTO this collection rather than exposing Registration itself.
+// Presenters and facilitators submit the same shape and share this one
+// collection, but show on two separate public pages/nav items (not a
+// combined "Experts" page) — this field is what splits them back apart.
+export type SpeakerRole = 'presenter' | 'facilitator'
+
 export interface Speaker {
   id: string
-  // Set when the presenter submitted this themselves from their account
-  // (project-docs meeting notes 2026-07-31: presenters can submit their own
-  // bio/image/presentation); admin-added historical speakers may omit it.
+  // Set when the presenter/facilitator submitted this themselves from their
+  // account (project-docs meeting notes 2026-07-31: presenters can submit
+  // their own bio/image/presentation); admin-added historical speakers may
+  // omit it.
   userId?: string
+  role: SpeakerRole
   name: string
   title?: string
   bio?: string

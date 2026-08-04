@@ -84,7 +84,10 @@ export default function Programme() {
                           {sessionSpeakers.map((sp, i) => (
                             <span key={sp.id}>
                               {i > 0 && ', '}
-                              <Link to={`/symposium/speakers#${sp.id}`} className="text-gold-600 underline">
+                              <Link
+                                to={`/symposium/${sp.role === 'facilitator' ? 'facilitators' : 'speakers'}#${sp.id}`}
+                                className="text-gold-600 underline"
+                              >
                                 {sp.name}
                               </Link>
                             </span>

@@ -1,6 +1,6 @@
 import { deleteField } from 'firebase/firestore'
 import { where, orderBy, listWhere, createDoc, updateDocById, removeDoc } from './crud'
-import type { Speaker } from '../../types/models'
+import type { Speaker, SpeakerRole } from '../../types/models'
 
 const col = 'speakers'
 
@@ -24,6 +24,15 @@ export async function listVisibleSpeakers(): Promise<Speaker[]> {
   return listWhere<Speaker>(col, [where('visible', '==', true), orderBy('order', 'asc')])
 }
 
+// Speakers and Facilitators show on two separate public pages, each only
+// ever needing its own role — filtering client-side (rather than a
+// composite where('role','==',...) index) since listVisibleSpeakers()
+// already has to fetch the whole small collection either way.
+export async function listVisibleSpeakersByRole(role: SpeakerRole): Promise<Speaker[]> {
+  const all = await listVisibleSpeakers()
+  return all.filter((s) => s.role === role)
+}
+
 export async function createSpeaker(data: Omit<Speaker, 'id'>): Promise<string> {
   return createDoc<Speaker>(col, data)
 }
@@ -41,7 +50,10 @@ export async function getSpeakerByUserId(userId: string): Promise<Speaker | null
   return all[0] ?? null
 }
 
-export type OwnSpeakerProfileInput = Pick<Speaker, 'name' | 'title' | 'bio' | 'photoMediaId' | 'presentationMediaId'>
+export type OwnSpeakerProfileInput = Pick<
+  Speaker,
+  'role' | 'name' | 'title' | 'bio' | 'photoMediaId' | 'presentationMediaId'
+>
 
 // Self-service — a presenter submitting/editing their own public profile.
 // New submissions start hidden (visible: false) until an admin reviews them,

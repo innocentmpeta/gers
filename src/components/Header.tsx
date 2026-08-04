@@ -7,7 +7,8 @@ import { useHeroOverlay } from '../lib/heroOverlay'
 const SYMPOSIUM_ITEMS = [
   { to: '/symposium', label: 'Overview', end: true },
   { to: '/symposium/programme', label: 'Programme' },
-  { to: '/symposium/speakers', label: 'Experts' },
+  { to: '/symposium/speakers', label: 'Speakers' },
+  { to: '/symposium/facilitators', label: 'Facilitators' },
   { to: '/symposium/exhibition', label: 'Exhibition' },
   { to: '/symposium/student-track', label: 'Student Track' },
   { to: '/symposium/partners', label: 'Partners' },

@@ -293,7 +293,7 @@ service cloud.firestore {
         || (isSignedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.visible == false);
       allow update: if isAnyAdmin()
         || (isSignedIn() && resource.data.userId == request.auth.uid && onlyChangedKeys([
-              'name', 'title', 'bio', 'photoMediaId', 'presentationMediaId'
+              'role', 'name', 'title', 'bio', 'photoMediaId', 'presentationMediaId'
             ]));
       allow delete: if isAnyAdmin();
     }

@@ -3,9 +3,10 @@ import MediaPicker from '../../../components/cms/MediaPicker'
 import { RICH_TEXT_HINT } from '../../../components/RichText'
 import { listSpeakers, createSpeaker, updateSpeaker, deleteSpeaker } from '../../../lib/firestore/speakers'
 import { listSessions } from '../../../lib/firestore/sessions'
-import type { MediaAsset, Session, Speaker } from '../../../types/models'
+import type { MediaAsset, Session, Speaker, SpeakerRole } from '../../../types/models'
 
 type Draft = {
+  role: SpeakerRole
   name: string
   title: string
   bio: string
@@ -15,6 +16,7 @@ type Draft = {
 }
 
 const EMPTY: Draft = {
+  role: 'presenter',
   name: '',
   title: '',
   bio: '',
@@ -25,6 +27,7 @@ const EMPTY: Draft = {
 
 function toDraft(speaker: Speaker): Draft {
   return {
+    role: speaker.role,
     name: speaker.name,
     title: speaker.title ?? '',
     bio: speaker.bio ?? '',
@@ -79,6 +82,7 @@ export default function AdminSpeakers() {
     setSaving(true)
     try {
       const payload = {
+        role: draft.role,
         name: draft.name,
         title: draft.title || undefined,
         bio: draft.bio || undefined,
@@ -140,7 +144,12 @@ export default function AdminSpeakers() {
           ) : (
             <div key={speaker.id} className="flex items-center justify-between rounded-lg border border-sand-200 bg-white p-4">
               <div>
-                <p className="text-ink-900">{speaker.name}</p>
+                <p className="text-ink-900">
+                  {speaker.name}{' '}
+                  <span className="text-xs font-normal text-slate-400">
+                    ({speaker.role === 'facilitator' ? 'Facilitator' : 'Presenter'})
+                  </span>
+                </p>
                 {speaker.title && <p className="text-sm text-slate-500">{speaker.title}</p>}
                 {!speaker.visible && speaker.userId && (
                   <p className="text-xs text-gold-600">Self-submitted — pending review</p>
@@ -217,6 +226,17 @@ function SpeakerForm({
 }) {
   return (
     <div className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1 text-sm text-slate-700">
+        Role
+        <select
+          value={draft.role}
+          onChange={(e) => setDraft({ ...draft, role: e.target.value as SpeakerRole })}
+          className="rounded-md border border-sand-200 px-3 py-2"
+        >
+          <option value="presenter">Presenter (Speakers page)</option>
+          <option value="facilitator">Facilitator (Facilitators page)</option>
+        </select>
+      </label>
       <label className="flex flex-col gap-1 text-sm text-slate-700">
         Name
         <input

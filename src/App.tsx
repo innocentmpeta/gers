@@ -11,6 +11,7 @@ import About from './features/public/pages/About'
 import EventOverview from './features/public/pages/EventOverview'
 import Programme from './features/public/pages/Programme'
 import Speakers from './features/public/pages/Speakers'
+import Facilitators from './features/public/pages/Facilitators'
 import Exhibition from './features/public/pages/Exhibition'
 import StudentTrack from './features/public/pages/StudentTrack'
 import Partners from './features/public/pages/Partners'
@@ -46,6 +47,7 @@ function App() {
             <Route path="symposium" element={<EventOverview />} />
             <Route path="symposium/programme" element={<Programme />} />
             <Route path="symposium/speakers" element={<Speakers />} />
+            <Route path="symposium/facilitators" element={<Facilitators />} />
             <Route path="symposium/exhibition" element={<Exhibition />} />
             <Route path="symposium/student-track" element={<StudentTrack />} />
             <Route path="symposium/partners" element={<Partners />} />
