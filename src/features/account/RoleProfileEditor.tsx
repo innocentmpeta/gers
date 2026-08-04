@@ -3,7 +3,7 @@ import MediaPicker from '../../components/cms/MediaPicker'
 import { RICH_TEXT_HINT } from '../../components/RichText'
 import { getSpeakerByUserId, upsertOwnSpeakerProfile } from '../../lib/firestore/speakers'
 import { getPartnerByUserId, upsertOwnPartnerProfile } from '../../lib/firestore/partnerProfiles'
-import type { MediaAsset, ParticipationRole, PartnerCategory } from '../../types/models'
+import type { MediaAsset, ParticipationRole } from '../../types/models'
 
 const inputClass =
   'rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700'
@@ -11,13 +11,14 @@ const labelClass = 'flex flex-col gap-1 text-sm text-slate-700'
 const hintClass = 'text-xs text-slate-400'
 
 // Shown on the account page once a registration holds a role that gets a
-// public profile (project-docs meeting notes 2026-07-31: presenters submit
-// bio/image/presentation, exhibitors/facilitators submit logo/blurb/image).
-// Presenters also submit their organisation's profile (logo/blurb/website)
-// alongside their personal one — organisers confirmed partner organisations
-// are the ones sending speakers, besides GDEnv/UJ, so this is what feeds
-// both the Partners page and the footer logos. Submissions always start
-// hidden — an admin has to review and publish them.
+// public profile. Per Stacey Bailie's 2026-08-04 email: presenters and
+// facilitators ("Experts") both submit a personal profile — bio/photo, plus
+// slides for presenters only — and it shows on the Experts page. Exhibitors
+// submit an organisation-first profile instead (their card on the Exhibition
+// page leads with the org, their own name at the bottom). Either way, an
+// organisation profile also gets upserted so it shows on the unified
+// Partners page and in the footer. Submissions always start hidden — an
+// admin has to review and publish them.
 export default function RoleProfileEditor({
   userId,
   role,
@@ -32,6 +33,7 @@ export default function RoleProfileEditor({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Expert (presenter/facilitator) personal fields.
   const [name, setName] = useState('')
   const [title, setTitle] = useState('')
   const [bio, setBio] = useState('')
@@ -40,16 +42,16 @@ export default function RoleProfileEditor({
   const [presentation, setPresentation] = useState<MediaAsset | null>(null)
   const [presentationId, setPresentationId] = useState<string | undefined>(undefined)
 
-  const [logo, setLogo] = useState<MediaAsset | null>(null)
-  const [logoId, setLogoId] = useState<string | undefined>(undefined)
-  const [image, setImage] = useState<MediaAsset | null>(null)
-  const [imageId, setImageId] = useState<string | undefined>(undefined)
-  const [websiteUrl, setWebsiteUrl] = useState('')
+  // Exhibitor fields — organisation-first, their own name is secondary.
+  const [contactName, setContactName] = useState('')
+  const [exhibitorOrgName, setExhibitorOrgName] = useState('')
+  const [exhibitorBlurb, setExhibitorBlurb] = useState('')
+  const [exhibitorLogo, setExhibitorLogo] = useState<MediaAsset | null>(null)
+  const [exhibitorLogoId, setExhibitorLogoId] = useState<string | undefined>(undefined)
+  const [exhibitorWebsiteUrl, setExhibitorWebsiteUrl] = useState('')
 
-  // Presenter-only: their organisation's own profile, separate from their
-  // personal one above — a presenter's org uses this block instead of the
-  // shared name/bio/logo/website fields above (those stay exhibitor/
-  // facilitator-only), since a presenter needs both at once.
+  // Expert-only: their organisation's own profile, separate from their
+  // personal one above — feeds the same unified Partners page.
   const [orgName, setOrgName] = useState('')
   const [orgBlurb, setOrgBlurb] = useState('')
   const [orgLogo, setOrgLogo] = useState<MediaAsset | null>(null)
@@ -57,10 +59,11 @@ export default function RoleProfileEditor({
   const [orgWebsiteUrl, setOrgWebsiteUrl] = useState('')
 
   const isPresenter = role === 'presenter'
+  const isExpert = role === 'presenter' || role === 'facilitator'
 
   useEffect(() => {
     async function load() {
-      if (isPresenter) {
+      if (isExpert) {
         const [existingSpeaker, existingOrg] = await Promise.all([
           getSpeakerByUserId(userId),
           getPartnerByUserId(userId),
@@ -83,25 +86,25 @@ export default function RoleProfileEditor({
       } else {
         const existing = await getPartnerByUserId(userId)
         if (existing) {
-          setName(existing.name)
-          setBio(existing.blurb ?? '')
-          setLogoId(existing.logoMediaId)
-          setImageId(existing.imageMediaId)
-          setWebsiteUrl(existing.websiteUrl ?? '')
+          setContactName(existing.contactName ?? '')
+          setExhibitorOrgName(existing.name)
+          setExhibitorBlurb(existing.blurb ?? '')
+          setExhibitorLogoId(existing.logoMediaId)
+          setExhibitorWebsiteUrl(existing.websiteUrl ?? '')
           setVisible(existing.visible)
         }
       }
       setLoading(false)
     }
     load()
-  }, [userId, isPresenter])
+  }, [userId, isExpert])
 
   async function handleSave() {
     setSaving(true)
     setError(null)
     setSaved(false)
     try {
-      if (isPresenter) {
+      if (isExpert) {
         await upsertOwnSpeakerProfile(userId, {
           name,
           title: title || undefined,
@@ -119,12 +122,13 @@ export default function RoleProfileEditor({
           })
         }
       } else {
-        await upsertOwnPartnerProfile(userId, role as PartnerCategory, {
-          name,
-          blurb: bio || undefined,
-          logoMediaId: logo?.id ?? logoId,
-          imageMediaId: image?.id ?? imageId,
-          websiteUrl: websiteUrl || undefined,
+        await upsertOwnPartnerProfile(userId, 'exhibitor', {
+          name: exhibitorOrgName,
+          contactName: contactName || undefined,
+          blurb: exhibitorBlurb || undefined,
+          logoMediaId: exhibitorLogo?.id ?? exhibitorLogoId,
+          imageMediaId: undefined,
+          websiteUrl: exhibitorWebsiteUrl || undefined,
         })
       }
       setSaved(true)
@@ -146,48 +150,79 @@ export default function RoleProfileEditor({
           : 'Pending admin review — not on the site yet.'}
       </p>
 
-      <div className="mt-4 flex flex-col gap-4">
-        <label className={labelClass}>
-          {isPresenter ? 'Name' : 'Organization name'}
-          <input required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-        </label>
-
-        {isPresenter && (
+      {isExpert ? (
+        <div className="mt-4 flex flex-col gap-4">
+          <label className={labelClass}>
+            Name
+            <input required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+          </label>
           <label className={labelClass}>
             Title / affiliation
             <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
           </label>
-        )}
-
-        <label className={labelClass}>
-          {isPresenter ? 'Bio' : 'Blurb'}
-          <textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} className={inputClass} />
-          <span className={hintClass}>{RICH_TEXT_HINT}</span>
-        </label>
-
-        {isPresenter ? (
-          <>
-            <MediaPicker label="Photo" accept="image" selectedAssetId={photo?.id ?? photoId} onSelect={setPhoto} />
+          <label className={labelClass}>
+            Bio
+            <textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} className={inputClass} />
+            <span className={hintClass}>{RICH_TEXT_HINT}</span>
+          </label>
+          <MediaPicker label="Photo" accept="image" selectedAssetId={photo?.id ?? photoId} onSelect={setPhoto} />
+          {isPresenter && (
             <MediaPicker
               label="Presentation"
               accept="document"
               selectedAssetId={presentation?.id ?? presentationId}
               onSelect={setPresentation}
             />
-          </>
-        ) : (
-          <>
-            <MediaPicker label="Logo" accept="image" selectedAssetId={logo?.id ?? logoId} onSelect={setLogo} />
-            <MediaPicker label="Image" accept="image" selectedAssetId={image?.id ?? imageId} onSelect={setImage} />
-            <label className={labelClass}>
-              Website (optional)
-              <input value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className={inputClass} />
-            </label>
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-col gap-4">
+          <label className={labelClass}>
+            Your name
+            <input
+              required
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className={labelClass}>
+            Organization name
+            <input
+              required
+              value={exhibitorOrgName}
+              onChange={(e) => setExhibitorOrgName(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+          <label className={labelClass}>
+            Blurb
+            <textarea
+              rows={4}
+              value={exhibitorBlurb}
+              onChange={(e) => setExhibitorBlurb(e.target.value)}
+              className={inputClass}
+            />
+            <span className={hintClass}>{RICH_TEXT_HINT}</span>
+          </label>
+          <MediaPicker
+            label="Logo"
+            accept="image"
+            selectedAssetId={exhibitorLogo?.id ?? exhibitorLogoId}
+            onSelect={setExhibitorLogo}
+          />
+          <label className={labelClass}>
+            Website (optional)
+            <input
+              value={exhibitorWebsiteUrl}
+              onChange={(e) => setExhibitorWebsiteUrl(e.target.value)}
+              className={inputClass}
+            />
+          </label>
+        </div>
+      )}
 
-      {isPresenter && (
+      {isExpert && (
         <div className="mt-10 border-t border-sand-200 pt-8">
           <h2 className="text-lg font-semibold text-ink-900">Your organization</h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -237,7 +272,7 @@ export default function RoleProfileEditor({
 
         <button
           onClick={handleSave}
-          disabled={saving || !name}
+          disabled={saving || (isExpert ? !name : !contactName || !exhibitorOrgName)}
           className="self-start rounded-full bg-gold-500 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-gold-600 disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Save profile'}

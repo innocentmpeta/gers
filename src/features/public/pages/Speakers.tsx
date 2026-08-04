@@ -33,13 +33,17 @@ export default function Speakers() {
       <HeroBlock hero={hero} />
       <div className="mx-auto max-w-6xl px-6 py-16">
         {speakers.length === 0 ? (
-          <p className="text-slate-500">Speakers will be announced here soon.</p>
+          <p className="text-slate-500">Experts will be announced here soon.</p>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {speakers.map((speaker) => {
               const photo = speaker.photoMediaId ? photos[speaker.photoMediaId] : undefined
               return (
-                <div key={speaker.id} className="overflow-hidden rounded-lg border border-sand-200 bg-white">
+                <div
+                  key={speaker.id}
+                  id={speaker.id}
+                  className="scroll-mt-32 overflow-hidden rounded-lg border border-sand-200 bg-white"
+                >
                   <div className="aspect-square bg-sand-100">
                     {photo && (
                       <img src={photo.fileUrl} alt={photo.altText} className="h-full w-full object-cover" />

@@ -16,7 +16,6 @@ import StudentTrack from './features/public/pages/StudentTrack'
 import Partners from './features/public/pages/Partners'
 import PastSymposiums from './features/public/pages/PastSymposiums'
 import Faq from './features/public/pages/Faq'
-import RegisterIntro from './features/public/pages/RegisterIntro'
 import AccountHome from './features/account/pages/AccountHome'
 import RegisterFlow from './features/account/pages/RegisterFlow'
 import AbstractSubmissionForm from './features/account/pages/AbstractSubmissionForm'
@@ -53,7 +52,10 @@ function App() {
             <Route path="partners" element={<Navigate to="/symposium/partners" replace />} />
             <Route path="past-symposiums" element={<PastSymposiums />} />
             <Route path="faq" element={<Faq />} />
-            <Route path="register" element={<RegisterIntro />} />
+            {/* Skips the old intro/CTA page — per organiser feedback (Gmail
+                thread, 2026-08-04) visitors should land straight on the
+                actual registration form. */}
+            <Route path="register" element={<Navigate to="/register/apply" replace />} />
             <Route path="register/apply" element={<RegisterFlow />} />
             <Route path="login" element={<Login />} />
             <Route path="signup" element={<Navigate to="/register/apply" replace />} />

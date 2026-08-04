@@ -11,23 +11,31 @@ import type { MediaAsset, PartnerCategory, PartnerProfile } from '../../../types
 
 const CATEGORY_LABEL: Record<PartnerCategory, string> = {
   exhibitor: 'Exhibitors',
-  facilitator: 'Facilitators',
   partner: 'Partners',
 }
 
 type Draft = {
   name: string
+  contactName: string
   blurb: string
   logoMediaId?: string
   imageMediaId?: string
   websiteUrl: string
 }
 
-const EMPTY: Draft = { name: '', blurb: '', logoMediaId: undefined, imageMediaId: undefined, websiteUrl: '' }
+const EMPTY: Draft = {
+  name: '',
+  contactName: '',
+  blurb: '',
+  logoMediaId: undefined,
+  imageMediaId: undefined,
+  websiteUrl: '',
+}
 
 function toDraft(partner: PartnerProfile): Draft {
   return {
     name: partner.name,
+    contactName: partner.contactName ?? '',
     blurb: partner.blurb ?? '',
     logoMediaId: partner.logoMediaId,
     imageMediaId: partner.imageMediaId,
@@ -81,6 +89,7 @@ export default function AdminPartners() {
     try {
       const payload = {
         name: draft.name,
+        contactName: draft.contactName || undefined,
         blurb: draft.blurb || undefined,
         logoMediaId: logo?.id ?? draft.logoMediaId,
         imageMediaId: image?.id ?? draft.imageMediaId,
@@ -120,7 +129,7 @@ export default function AdminPartners() {
       </p>
 
       <div className="mt-6 flex gap-2 text-sm">
-        {(['exhibitor', 'facilitator', 'partner'] as PartnerCategory[]).map((c) => (
+        {(['exhibitor', 'partner'] as PartnerCategory[]).map((c) => (
           <button
             key={c}
             onClick={() => setCategory(c)}
@@ -239,6 +248,14 @@ function PartnerForm({
         <input
           value={draft.name}
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          className="rounded-md border border-sand-200 px-3 py-2"
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm text-slate-700">
+        Contact name (optional — shown on the Exhibition page for exhibitors)
+        <input
+          value={draft.contactName}
+          onChange={(e) => setDraft({ ...draft, contactName: e.target.value })}
           className="rounded-md border border-sand-200 px-3 py-2"
         />
       </label>

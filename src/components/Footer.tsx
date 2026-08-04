@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
-import { listVisiblePartners } from '../lib/firestore/partnerProfiles'
+import { listAllVisiblePartners } from '../lib/firestore/partnerProfiles'
 import { getMediaAsset } from '../lib/firestore/media'
 import type { MediaAsset, PartnerProfile } from '../types/models'
 
-// Partner organisations (presenters' orgs, besides GDEnv/UJ who stay static
-// below) get their logos shown here too — project-docs meeting notes:
-// "the logos of these partner organisations must be displayed at the
-// footer section."
+// Partner organisations (every participant's org, besides GDEnv/UJ who stay
+// static below) get their logos shown here too — project-docs meeting
+// notes: "the logos of these partner organisations must be displayed at
+// the footer section."
 export default function Footer() {
   const [partners, setPartners] = useState<PartnerProfile[]>([])
   const [logos, setLogos] = useState<Record<string, MediaAsset>>({})
 
   useEffect(() => {
-    listVisiblePartners('partner').then(async (list) => {
+    listAllVisiblePartners().then(async (list) => {
       const withLogos = list.filter((p) => p.logoMediaId)
       setPartners(withLogos)
       const ids = [...new Set(withLogos.map((p) => p.logoMediaId).filter((id): id is string => !!id))]

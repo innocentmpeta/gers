@@ -1,3 +1,4 @@
+import { deleteField } from 'firebase/firestore'
 import { where, orderBy, listWhere, createDoc, updateDocById, removeDoc } from './crud'
 import type { Speaker } from '../../types/models'
 
@@ -5,6 +6,18 @@ const col = 'speakers'
 
 export async function listSpeakers(): Promise<Speaker[]> {
   return listWhere<Speaker>(col, [orderBy('order', 'asc')])
+}
+
+export async function listSpeakersForSession(sessionId: string): Promise<Speaker[]> {
+  return listWhere<Speaker>(col, [where('sessionId', '==', sessionId), orderBy('order', 'asc')])
+}
+
+// Admin-only — links/unlinks a speaker or facilitator to a Programme
+// session (many Speaker docs can point at the same session). Goes through
+// updateDocById directly rather than updateSpeaker so a genuine unlink can
+// use deleteField() — Partial<Speaker> can't express "clear this field".
+export async function setSpeakerSession(speakerId: string, sessionId: string | null): Promise<void> {
+  await updateDocById(col, speakerId, { sessionId: sessionId ?? deleteField() })
 }
 
 export async function listVisibleSpeakers(): Promise<Speaker[]> {

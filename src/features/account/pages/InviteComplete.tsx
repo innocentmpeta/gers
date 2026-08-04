@@ -59,6 +59,7 @@ export default function InviteComplete() {
           sector: invite.sector,
           gender: invite.gender,
           ageGroup: invite.ageGroup,
+          disability: invite.disability,
           whatsappNumber: invite.whatsappNumber,
         })
       )

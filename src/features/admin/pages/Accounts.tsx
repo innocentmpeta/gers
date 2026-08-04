@@ -25,9 +25,9 @@ import type {
 } from '../../../types/models'
 
 const SALUTATIONS: Salutation[] = ['Mr', 'Ms', 'Mrs', 'Dr', 'Prof', 'Other']
-const SECTORS: Sector[] = ['Government', 'Academia / Research', 'Private Sector', 'Civil Society / NGO', 'Student', 'Other']
-const GENDERS: Gender[] = ['Male', 'Female', 'Prefer not to say', 'Other']
-const AGE_GROUPS: AgeGroup[] = ['Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+const SECTORS: Sector[] = ['Academia', 'Research', 'Government', 'Enterprise', 'Civil Society', 'Other']
+const GENDERS: Gender[] = ['Female', 'Male', 'Prefer not to say']
+const AGE_GROUPS: AgeGroup[] = ['Under 35 years', '35 years and over']
 
 const ROLE_LABEL: Record<ParticipationRole, string> = {
   public_participant: 'Public participant',

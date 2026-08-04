@@ -7,7 +7,18 @@ const usersCol = 'users'
 
 export type NewUserProfileInput = Pick<
   User,
-  'name' | 'surname' | 'email' | 'salutation' | 'phone' | 'whatsappNumber' | 'organization' | 'jobTitle' | 'sector' | 'gender' | 'ageGroup'
+  | 'name'
+  | 'surname'
+  | 'email'
+  | 'salutation'
+  | 'phone'
+  | 'whatsappNumber'
+  | 'organization'
+  | 'jobTitle'
+  | 'sector'
+  | 'gender'
+  | 'ageGroup'
+  | 'disability'
 > &
   Partial<Pick<User, 'showInDirectory' | 'showWhatsapp' | 'showEmail' | 'visibilityScope'>>
 
@@ -94,6 +105,7 @@ export type EditableProfileFields = Pick<
   | 'sector'
   | 'gender'
   | 'ageGroup'
+  | 'disability'
   | 'showInDirectory'
   | 'showWhatsapp'
   | 'showEmail'

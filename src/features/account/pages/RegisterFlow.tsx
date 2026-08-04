@@ -4,12 +4,13 @@ import { useAuth } from '../../../lib/auth'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import { getRegistrationForUser, createDefaultRegistration } from '../../../lib/firestore/registrations'
 import type { NewUserProfileInput } from '../../../lib/firestore/users'
-import type { AgeGroup, Gender, Salutation, Sector, Symposium, VisibilityScope } from '../../../types/models'
+import type { AgeGroup, Disability, Gender, Salutation, Sector, Symposium, VisibilityScope } from '../../../types/models'
 
 const SALUTATIONS: Salutation[] = ['Mr', 'Ms', 'Mrs', 'Dr', 'Prof', 'Other']
-const SECTORS: Sector[] = ['Government', 'Academia / Research', 'Private Sector', 'Civil Society / NGO', 'Student', 'Other']
-const GENDERS: Gender[] = ['Male', 'Female', 'Prefer not to say', 'Other']
-const AGE_GROUPS: AgeGroup[] = ['Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+const SECTORS: Sector[] = ['Academia', 'Research', 'Government', 'Enterprise', 'Civil Society', 'Other']
+const GENDERS: Gender[] = ['Female', 'Male', 'Prefer not to say']
+const AGE_GROUPS: AgeGroup[] = ['Under 35 years', '35 years and over']
+const DISABILITY_OPTIONS: Disability[] = ['Yes', 'No', 'Prefer not to say']
 
 const inputClass =
   'rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700'
@@ -159,6 +160,12 @@ function QuickRegister({
       >
         {submitting ? 'Registering…' : 'Register now'}
       </button>
+      <p className="mt-6 text-sm text-slate-500">
+        Presenting instead?{' '}
+        <Link to="/register/abstract" className="text-ink-800 underline">
+          Submit an abstract
+        </Link>
+      </p>
     </div>
   )
 }
@@ -182,6 +189,7 @@ function FullSignUpAndRegister({
   const [sector, setSector] = useState<Sector | ''>('')
   const [gender, setGender] = useState<Gender | ''>('')
   const [ageGroup, setAgeGroup] = useState<AgeGroup | ''>('')
+  const [disability, setDisability] = useState<Disability | ''>('')
   const [email, setEmail] = useState('')
   const [whatsappNumber, setWhatsappNumber] = useState('')
   const [password, setPassword] = useState('')
@@ -200,6 +208,7 @@ function FullSignUpAndRegister({
       sector: sector || undefined,
       gender: gender || undefined,
       ageGroup: ageGroup || undefined,
+      disability: disability || undefined,
       whatsappNumber: whatsappNumber || undefined,
       showInDirectory,
       visibilityScope,
@@ -209,11 +218,11 @@ function FullSignUpAndRegister({
   return (
     <div className="mx-auto max-w-2xl px-6 py-24">
       <p className="text-sm uppercase tracking-wide text-gold-600">Register</p>
-      <h1 className="mt-2 text-4xl">{symposium.name}</h1>
+      <h1 className="mt-2 text-4xl">GERS Community of Practice</h1>
       <p className="mt-4 text-slate-500">
-        Create your account and register in one step — you'll be registered as an online
-        participant pending approval. Organisers assign in-person attendance and other roles
-        afterward.
+        Sign up as part of the GERS Community of Practice and register for {symposium.name} in one
+        step — you'll be registered as a participant for this year's Symposium, pending approval
+        and further role allocation by organisers.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
@@ -285,6 +294,22 @@ function FullSignUpAndRegister({
         </div>
 
         <label className={labelClass}>
+          Do you consider yourself to be a person with a disability?
+          <select
+            value={disability}
+            onChange={(e) => setDisability(e.target.value as Disability)}
+            className={inputClass}
+          >
+            <option value="">—</option>
+            {DISABILITY_OPTIONS.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className={labelClass}>
           Email
           <input
             type="email"
@@ -312,7 +337,8 @@ function FullSignUpAndRegister({
 
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={showInDirectory} onChange={(e) => setShowInDirectory(e.target.checked)} />
-          List me in the attendee directory (you can change this anytime from your account)
+          Include me in the Community of Practice directory (you can change this anytime from your
+          account)
         </label>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
@@ -324,18 +350,33 @@ function FullSignUpAndRegister({
         >
           {submitting ? 'Registering…' : 'Create account & register'}
         </button>
-        <p className="text-xs text-slate-500">
-          By registering you consent to GERS using your details for event administration and
-          research/reporting purposes.
-        </p>
+        <div className="text-xs text-slate-500">
+          <p>
+            By registering you consent to GERS using your details for event administration,
+            communications and research/reporting purposes.
+          </p>
+          <p className="mt-2">
+            Personal information is collected, managed and processed by GDEnv in accordance with
+            the guidelines stipulated in the Protection of Personal Information Act (PoPIA), as
+            well as associated legislation. Your information will only be used internally by
+            GDEnv and disposed of in accordance with legislative requirements if not needed. We
+            will not share your information with 3rd parties, unless explicitly permitted by
+            yourself in writing.
+          </p>
+        </div>
       </form>
 
       <p className="mt-6 text-sm text-slate-500">
         Already have an account?{' '}
         <Link to="/login" className="text-ink-800 underline">
-          Log in
-        </Link>{' '}
-        first, then register.
+          Log in to register
+        </Link>
+      </p>
+      <p className="mt-2 text-sm text-slate-500">
+        Presenting instead?{' '}
+        <Link to="/register/abstract" className="text-ink-800 underline">
+          Submit an abstract
+        </Link>
       </p>
     </div>
   )

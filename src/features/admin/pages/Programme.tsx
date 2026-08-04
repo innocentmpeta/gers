@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { RICH_TEXT_HINT } from '../../../components/RichText'
 import { listSessions, createSession, updateSession, deleteSession } from '../../../lib/firestore/sessions'
+import { listSpeakers, setSpeakerSession } from '../../../lib/firestore/speakers'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
-import type { Session, Symposium } from '../../../types/models'
+import type { Session, Speaker, Symposium } from '../../../types/models'
 
 type SessionDraft = {
   title: string
@@ -36,31 +37,40 @@ function toDraft(session: Session): SessionDraft {
 export default function AdminProgramme() {
   const [symposium, setSymposium] = useState<Symposium | null>(null)
   const [sessions, setSessions] = useState<Session[]>([])
+  const [speakers, setSpeakers] = useState<Speaker[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [draft, setDraft] = useState<SessionDraft>(EMPTY_DRAFT)
+  const [selectedSpeakerIds, setSelectedSpeakerIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
 
   async function load() {
-    const [s, sym] = await Promise.all([listSessions(), getDefaultSymposium()])
+    const [s, sym, sp] = await Promise.all([listSessions(), getDefaultSymposium(), listSpeakers()])
     setSessions(s)
     setSymposium(sym)
+    setSpeakers(sp)
   }
 
   useEffect(() => {
     load()
   }, [])
 
+  function speakersFor(sessionId: string): Speaker[] {
+    return speakers.filter((sp) => sp.sessionId === sessionId)
+  }
+
   function startEdit(session: Session) {
     setEditingId(session.id)
     setAdding(false)
     setDraft(toDraft(session))
+    setSelectedSpeakerIds(new Set(speakersFor(session.id).map((sp) => sp.id)))
   }
 
   function startAdd() {
     setAdding(true)
     setEditingId(null)
     setDraft(EMPTY_DRAFT)
+    setSelectedSpeakerIds(new Set())
   }
 
   function cancel() {
@@ -82,11 +92,17 @@ export default function AdminProgramme() {
         joinLink: draft.joinLink || undefined,
         day: draft.startTime.slice(0, 10),
       }
-      if (editingId) {
-        await updateSession(editingId, payload)
-      } else {
-        await createSession(payload)
-      }
+      const sessionId = editingId ? editingId : await createSession(payload)
+      if (editingId) await updateSession(editingId, payload)
+
+      const previouslyLinked = new Set(speakersFor(sessionId).map((sp) => sp.id))
+      const toLink = [...selectedSpeakerIds].filter((id) => !previouslyLinked.has(id))
+      const toUnlink = [...previouslyLinked].filter((id) => !selectedSpeakerIds.has(id))
+      await Promise.all([
+        ...toLink.map((id) => setSpeakerSession(id, sessionId)),
+        ...toUnlink.map((id) => setSpeakerSession(id, null)),
+      ])
+
       cancel()
       load()
     } finally {
@@ -118,7 +134,16 @@ export default function AdminProgramme() {
         {sessions.map((session) => (
           <div key={session.id} className="rounded-lg border border-sand-200 bg-white p-4">
             {editingId === session.id ? (
-              <SessionForm draft={draft} setDraft={setDraft} onSave={handleSave} onCancel={cancel} saving={saving} />
+              <SessionForm
+                draft={draft}
+                setDraft={setDraft}
+                speakers={speakers}
+                selectedSpeakerIds={selectedSpeakerIds}
+                setSelectedSpeakerIds={setSelectedSpeakerIds}
+                onSave={handleSave}
+                onCancel={cancel}
+                saving={saving}
+              />
             ) : (
               <div className="flex items-start justify-between">
                 <div>
@@ -126,6 +151,13 @@ export default function AdminProgramme() {
                     {new Date(session.startTime).toLocaleString()} · {session.roomOrTrack || 'No room set'}
                   </p>
                   <p className="text-ink-900">{session.title}</p>
+                  {speakersFor(session.id).length > 0 && (
+                    <p className="mt-1 text-sm text-slate-500">
+                      {speakersFor(session.id)
+                        .map((sp) => sp.name)
+                        .join(', ')}
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-3 text-sm">
                   <button onClick={() => startEdit(session)} className="text-ink-800 underline">
@@ -142,7 +174,16 @@ export default function AdminProgramme() {
 
         {adding && (
           <div className="rounded-lg border border-sand-200 bg-white p-4">
-            <SessionForm draft={draft} setDraft={setDraft} onSave={handleSave} onCancel={cancel} saving={saving} />
+            <SessionForm
+              draft={draft}
+              setDraft={setDraft}
+              speakers={speakers}
+              selectedSpeakerIds={selectedSpeakerIds}
+              setSelectedSpeakerIds={setSelectedSpeakerIds}
+              onSave={handleSave}
+              onCancel={cancel}
+              saving={saving}
+            />
           </div>
         )}
 
@@ -162,16 +203,29 @@ export default function AdminProgramme() {
 function SessionForm({
   draft,
   setDraft,
+  speakers,
+  selectedSpeakerIds,
+  setSelectedSpeakerIds,
   onSave,
   onCancel,
   saving,
 }: {
   draft: SessionDraft
   setDraft: (d: SessionDraft) => void
+  speakers: Speaker[]
+  selectedSpeakerIds: Set<string>
+  setSelectedSpeakerIds: (ids: Set<string>) => void
   onSave: () => void
   onCancel: () => void
   saving: boolean
 }) {
+  function toggleSpeaker(id: string) {
+    const next = new Set(selectedSpeakerIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelectedSpeakerIds(next)
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm text-slate-700">
@@ -228,6 +282,26 @@ function SessionForm({
           className="rounded-md border border-sand-200 px-3 py-2"
         />
       </label>
+      <div className="flex flex-col gap-1 text-sm text-slate-700">
+        Speakers / facilitators
+        {speakers.length === 0 ? (
+          <p className="text-xs text-slate-400">No published experts yet.</p>
+        ) : (
+          <div className="flex flex-col gap-1 rounded-md border border-sand-200 p-3">
+            {speakers.map((sp) => (
+              <label key={sp.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedSpeakerIds.has(sp.id)}
+                  onChange={() => toggleSpeaker(sp.id)}
+                />
+                {sp.name}
+                {sp.title && <span className="text-slate-400">— {sp.title}</span>}
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="flex gap-3">
         <button
           onClick={onSave}

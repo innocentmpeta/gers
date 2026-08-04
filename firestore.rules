@@ -59,7 +59,7 @@ service cloud.firestore {
       allow update: if canAccounts()
         || (isOwner(userId) && onlyChangedKeys([
               'salutation', 'name', 'surname', 'phone', 'whatsappNumber',
-              'organization', 'jobTitle', 'sector', 'gender', 'ageGroup',
+              'organization', 'jobTitle', 'sector', 'gender', 'ageGroup', 'disability',
               'showInDirectory', 'showWhatsapp', 'showEmail', 'visibilityScope'
             ]))
         || (isOwner(userId)

@@ -63,21 +63,24 @@ export default function AccountHome() {
   // a single Promise.all.
   const load = useCallback(async () => {
     if (!firebaseUser) return
+    setLoadError(null)
     try {
       const s = await getDefaultSymposium()
       setSymposium(s)
       try {
         setRegistration(s ? await getRegistrationForUser(firebaseUser.uid, s.id) : null)
-      } catch {
-        setLoadError('Could not load your registration details. Please refresh the page.')
+      } catch (err) {
+        console.error('Failed to load registration', err)
+        setLoadError("We couldn't check your registration status.")
       }
       try {
         setAbstracts(await listUserAbstractSubmissions(firebaseUser.uid))
       } catch {
         // Non-critical — the abstracts list just stays empty.
       }
-    } catch {
-      setLoadError('Could not load your account details. Please refresh the page.')
+    } catch (err) {
+      console.error('Failed to load account details', err)
+      setLoadError("We couldn't load your account details.")
     } finally {
       setLoading(false)
     }
@@ -143,42 +146,46 @@ export default function AccountHome() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-24">
       <p className="text-sm uppercase tracking-wide text-gold-600">My Account</p>
-      <h1 className="mt-2 text-4xl">{profile ? `Welcome, ${profile.name}` : 'My Account'}</h1>
-
-      {profile && (
-        <dl className="mt-8 grid max-w-sm grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt className="text-slate-500">Email</dt>
-          <dd>{profile.email}</dd>
-          <dt className="text-slate-500">System role</dt>
-          <dd>{profile.systemRole ?? 'attendee (no admin role)'}</dd>
-        </dl>
-      )}
+      <h1 className="mt-2 text-4xl">{profile ? `Welcome, ${profile.name}` : 'Welcome'}</h1>
 
       <div className="mt-10 border-t border-sand-200 pt-8">
         <h2 className="text-lg font-semibold text-ink-900">Registration</h2>
 
         {loading && <p className="mt-2 text-sm text-slate-500">Loading…</p>}
 
-        {loadError && <p className="mt-2 text-sm text-red-600">{loadError}</p>}
+        {loadError && (
+          <div className="mt-2">
+            <p className="text-sm text-red-600">{loadError}</p>
+            <button onClick={() => load()} className="mt-2 text-sm text-ink-800 underline">
+              Try again
+            </button>
+          </div>
+        )}
 
         {!loading && !loadError && !symposium && (
           <p className="mt-2 text-sm text-slate-500">Registration isn't open yet — check back soon.</p>
         )}
 
-        {!loading && symposium && !registration && (
+        {!loading && !loadError && symposium && !registration && (
           <div className="mt-2">
-            <p className="text-sm text-slate-500">You haven't registered for {symposium.name} yet.</p>
+            <p className="text-sm font-medium text-gold-600">Not yet registered</p>
+            <p className="mt-1 text-sm text-slate-500">
+              You haven't signed up for {symposium.name} yet.
+            </p>
             <Link
               to="/register/apply"
               className="mt-4 inline-flex rounded-full bg-gold-500 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-gold-600"
             >
-              Register now
+              Sign up &amp; Register
             </Link>
           </div>
         )}
 
         {!loading && symposium && registration && (
           <div className="mt-2 flex flex-col gap-4">
+            {registration.status === 'approved' && (
+              <p className="text-sm font-medium text-green-600">Registered</p>
+            )}
             <dl className="grid max-w-sm grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="text-slate-500">Symposium</dt>
               <dd>{symposium.name}</dd>

@@ -7,14 +7,14 @@ export type SystemRole = 'super_admin' | 'organiser' | 'content_manager' | null
 
 export type VisibilityScope = 'private' | 'all_attendees' | 'same_role_only' | 'organisers_only'
 
-// Option sets below are placeholders pending the organisers' confirmation
-// (project-docs meeting notes 2026-07-31 flag Sector/Gender/Age group as
-// "I'll confirm") — adjust here once finalized, nothing else depends on the
-// exact values beyond the sign-up form and admin display.
+// Confirmed via the organisers' tracked-changes registration form
+// (GDEnv/UJ, 2026-08-04) — Sector/Gender/Age group/Disability options below
+// match that document exactly.
 export type Salutation = 'Mr' | 'Ms' | 'Mrs' | 'Dr' | 'Prof' | 'Other'
-export type Sector = 'Government' | 'Academia / Research' | 'Private Sector' | 'Civil Society / NGO' | 'Student' | 'Other'
-export type Gender = 'Male' | 'Female' | 'Prefer not to say' | 'Other'
-export type AgeGroup = 'Under 18' | '18-24' | '25-34' | '35-44' | '45-54' | '55-64' | '65+'
+export type Sector = 'Academia' | 'Research' | 'Government' | 'Enterprise' | 'Civil Society' | 'Other'
+export type Gender = 'Female' | 'Male' | 'Prefer not to say'
+export type AgeGroup = 'Under 35 years' | '35 years and over'
+export type Disability = 'Yes' | 'No' | 'Prefer not to say'
 
 export interface User {
   id: string
@@ -29,6 +29,7 @@ export interface User {
   sector?: Sector
   gender?: Gender
   ageGroup?: AgeGroup
+  disability?: Disability
   showInDirectory: boolean
   showWhatsapp: boolean
   showEmail: boolean
@@ -153,6 +154,7 @@ export interface Invite {
   sector?: Sector
   gender?: Gender
   ageGroup?: AgeGroup
+  disability?: Disability
   whatsappNumber?: string
   // Admin capability to grant on completion — omitted/undefined for a plain
   // attendee invite (e.g. a VIP with no admin access).
@@ -375,22 +377,29 @@ export interface Speaker {
   visible: boolean
 }
 
-// Exhibitors, facilitators, and partners all submit the same shape (logo,
-// blurb, website) — see project-docs meeting notes 2026-07-31 and the GDEnv
-// nav-planning email grouping speakers/facilitators/exhibitors under one
-// "Partners" page. 'partner' represents an organisation a presenter comes
-// from (besides GDEnv/UJ, which stay static in the footer) — a presenter's
-// self-submission also upserts one of these alongside their Speaker profile,
-// so their organisation's logo can appear on the Partners page and in the
-// footer without a separate admin step. Exhibitor/facilitator partner
-// profiles can also be added directly by admins, not just self-submitted.
-export type PartnerCategory = 'exhibitor' | 'facilitator' | 'partner'
+// Per Stacey Bailie's 2026-08-04 email clarifying the brief: "Partners" is
+// not divided by role — it's simply every organisation a participant
+// represents (name, logo, website), since one org can be represented by
+// several participants in different roles. So this only distinguishes *how*
+// a profile was collected, not how it's displayed:
+//  - 'exhibitor': the exhibitor's own submission (their card on the
+//    Exhibition page — org name heading, their contactName + website below).
+//  - 'partner': an organisation linked from a presenter's or facilitator's
+//    submission ("Experts" — personal Speaker profile — also upserts one of
+//    these for their org). Admins can add either category directly too.
+// The public Partners page itself ignores this distinction entirely and
+// lists every visible profile together, alphabetically.
+export type PartnerCategory = 'exhibitor' | 'partner'
 
 export interface PartnerProfile {
   id: string
   userId?: string
   category: PartnerCategory
   name: string
+  // Exhibitor-only: the submitting person's own name, shown at the bottom
+  // of their Exhibition-page card (which is otherwise organisation-first,
+  // unlike a Speaker card which is person-first).
+  contactName?: string
   blurb?: string
   logoMediaId?: string
   imageMediaId?: string
