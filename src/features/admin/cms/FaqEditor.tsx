@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import RichText, { RICH_TEXT_HINT } from '../../../components/RichText'
+import RichText, { RichTextHint } from '../../../components/RichText'
 import { listFaqItems, createFaqItem, updateFaqItem, deleteFaqItem } from '../../../lib/firestore/faqItems'
 import type { FaqItem } from '../../../types/models'
 
@@ -179,7 +179,7 @@ function FaqForm({
           rows={3}
           className="rounded-md border border-sand-200 px-3 py-2"
         />
-        <span className="text-xs text-slate-400">{RICH_TEXT_HINT}</span>
+        <RichTextHint />
       </label>
       <div className="flex gap-3">
         <button

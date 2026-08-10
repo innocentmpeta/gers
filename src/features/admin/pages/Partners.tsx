@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import MediaPicker from '../../../components/cms/MediaPicker'
-import { RICH_TEXT_HINT } from '../../../components/RichText'
+import { RichTextHint } from '../../../components/RichText'
 import {
   listPartners,
   createPartner,
@@ -267,7 +267,7 @@ function PartnerForm({
           rows={3}
           className="rounded-md border border-sand-200 px-3 py-2"
         />
-        <span className="text-xs text-slate-400">{RICH_TEXT_HINT}</span>
+        <RichTextHint />
       </label>
       <MediaPicker label="Logo" accept="image" selectedAssetId={logo?.id ?? draft.logoMediaId} onSelect={setLogo} />
       <MediaPicker label="Image" accept="image" selectedAssetId={image?.id ?? draft.imageMediaId} onSelect={setImage} />

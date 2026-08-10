@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import MediaPicker from '../../components/cms/MediaPicker'
-import { RICH_TEXT_HINT } from '../../components/RichText'
+import { RichTextHint } from '../../components/RichText'
 import { getSpeakerByUserId, upsertOwnSpeakerProfile } from '../../lib/firestore/speakers'
 import { getPartnerByUserId, upsertOwnPartnerProfile } from '../../lib/firestore/partnerProfiles'
 import type { MediaAsset, ParticipationRole } from '../../types/models'
@@ -8,7 +8,6 @@ import type { MediaAsset, ParticipationRole } from '../../types/models'
 const inputClass =
   'rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700'
 const labelClass = 'flex flex-col gap-1 text-sm text-slate-700'
-const hintClass = 'text-xs text-slate-400'
 
 // Shown on the account page once a registration holds a role that gets a
 // public profile. Presenters and facilitators both submit a personal
@@ -164,7 +163,7 @@ export default function RoleProfileEditor({
           <label className={labelClass}>
             Bio
             <textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} className={inputClass} />
-            <span className={hintClass}>{RICH_TEXT_HINT}</span>
+            <RichTextHint />
           </label>
           <MediaPicker label="Photo" accept="image" selectedAssetId={photo?.id ?? photoId} onSelect={setPhoto} />
           {isPresenter && (
@@ -204,7 +203,7 @@ export default function RoleProfileEditor({
               onChange={(e) => setExhibitorBlurb(e.target.value)}
               className={inputClass}
             />
-            <span className={hintClass}>{RICH_TEXT_HINT}</span>
+            <RichTextHint />
           </label>
           <MediaPicker
             label="Logo"
@@ -253,7 +252,7 @@ export default function RoleProfileEditor({
                 onChange={(e) => setOrgBlurb(e.target.value)}
                 className={inputClass}
               />
-              <span className={hintClass}>{RICH_TEXT_HINT}</span>
+              <RichTextHint />
             </label>
             <label className={labelClass}>
               Website (optional)

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import MediaPicker from '../../../components/cms/MediaPicker'
-import { RICH_TEXT_HINT } from '../../../components/RichText'
+import { RichTextHint } from '../../../components/RichText'
 import { createItem, updateItem, deleteItem } from '../../../lib/firestore/items'
 import type { Item, MediaAsset } from '../../../types/models'
 
@@ -97,7 +97,7 @@ export default function ItemForm({ sectionId, order, item, onSaved, onCancel }: 
             rows={3}
             className="rounded-md border border-sand-200 bg-white px-3 py-2"
           />
-          <span className="text-xs text-slate-400">{RICH_TEXT_HINT}</span>
+          <RichTextHint />
         </label>
         <label className="flex flex-col gap-1 text-sm text-slate-700">
           Full body (detail page)
@@ -107,7 +107,7 @@ export default function ItemForm({ sectionId, order, item, onSaved, onCancel }: 
             rows={3}
             className="rounded-md border border-sand-200 bg-white px-3 py-2"
           />
-          <span className="text-xs text-slate-400">{RICH_TEXT_HINT}</span>
+          <RichTextHint />
         </label>
         <label className="flex flex-col gap-1 text-sm text-slate-700">
           Tag / label
