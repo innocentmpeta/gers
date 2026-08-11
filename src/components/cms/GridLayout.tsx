@@ -1,5 +1,7 @@
 import ItemLink from './ItemLink'
+import YoutubeThumb from './YoutubeThumb'
 import RichText from '../RichText'
+import { getYoutubeVideoId } from '../../lib/youtube'
 import type { Item, MediaAsset } from '../../types/models'
 
 export default function GridLayout({ items, mediaMap }: { items: Item[]; mediaMap: Record<string, MediaAsset> }) {
@@ -7,6 +9,7 @@ export default function GridLayout({ items, mediaMap }: { items: Item[]; mediaMa
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => {
         const image = item.imageId ? mediaMap[item.imageId] : undefined
+        const videoId = item.youtubeUrl ? getYoutubeVideoId(item.youtubeUrl) : null
         return (
           <ItemLink
             key={item.id}
@@ -14,7 +17,11 @@ export default function GridLayout({ items, mediaMap }: { items: Item[]; mediaMa
             className="group flex flex-col overflow-hidden rounded-lg border border-sand-200 bg-white transition-shadow hover:shadow-md"
           >
             <div className="aspect-[4/3] bg-sand-100">
-              {image && <img src={image.fileUrl} alt={image.altText} className="h-full w-full object-cover" />}
+              {videoId ? (
+                <YoutubeThumb videoId={videoId} />
+              ) : (
+                image && <img src={image.fileUrl} alt={image.altText} className="h-full w-full object-cover" />
+              )}
             </div>
             <div className="flex flex-1 flex-col p-4">
               {item.tag && (

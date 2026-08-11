@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth'
 const ADMIN_NAV = [
   { to: '/admin', label: 'Dashboard', end: true },
   { to: '/admin/content', label: 'Content' },
+  { to: '/admin/media', label: 'Media' },
   { to: '/admin/programme', label: 'Programme' },
   { to: '/admin/speakers', label: 'Speakers' },
   { to: '/admin/partners', label: 'Partners' },

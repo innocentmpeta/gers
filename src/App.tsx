@@ -26,6 +26,7 @@ import ItemDetailPage from './features/public/cms/ItemDetailPage'
 
 import AdminDashboard from './features/admin/pages/Dashboard'
 import AdminContent from './features/admin/pages/Content'
+import AdminMedia from './features/admin/pages/Media'
 import PageEditor from './features/admin/cms/PageEditor'
 import AdminProgramme from './features/admin/pages/Programme'
 import AdminSpeakers from './features/admin/pages/Speakers'
@@ -84,6 +85,7 @@ function App() {
               <Route element={<RequireRole capability="cms" />}>
                 <Route path="content" element={<AdminContent />} />
                 <Route path="content/:pageId" element={<PageEditor />} />
+                <Route path="media" element={<AdminMedia />} />
               </Route>
               <Route element={<RequireRole capability="registrations" />}>
                 <Route path="programme" element={<AdminProgramme />} />

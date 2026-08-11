@@ -165,13 +165,20 @@ export default function RoleProfileEditor({
             <textarea rows={4} value={bio} onChange={(e) => setBio(e.target.value)} className={inputClass} />
             <RichTextHint />
           </label>
-          <MediaPicker label="Photo" accept="image" selectedAssetId={photo?.id ?? photoId} onSelect={setPhoto} />
+          <MediaPicker
+            label="Photo"
+            accept="image"
+            selectedAssetId={photo?.id ?? photoId}
+            onSelect={setPhoto}
+            browseExisting={false}
+          />
           {isPresenter && (
             <MediaPicker
               label="Presentation"
               accept="document"
               selectedAssetId={presentation?.id ?? presentationId}
               onSelect={setPresentation}
+              browseExisting={false}
             />
           )}
         </div>
@@ -210,6 +217,7 @@ export default function RoleProfileEditor({
             accept="image"
             selectedAssetId={exhibitorLogo?.id ?? exhibitorLogoId}
             onSelect={setExhibitorLogo}
+            browseExisting={false}
           />
           <label className={labelClass}>
             Website (optional)
@@ -243,6 +251,7 @@ export default function RoleProfileEditor({
               accept="image"
               selectedAssetId={orgLogo?.id ?? orgLogoId}
               onSelect={setOrgLogo}
+              browseExisting={false}
             />
             <label className={labelClass}>
               About your organization

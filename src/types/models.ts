@@ -309,6 +309,9 @@ export interface Item {
   sectionId: string
   order: number
   imageId?: string
+  // When set, the card thumbnail and detail page show this video instead of
+  // imageId — see src/lib/youtube.ts for URL parsing.
+  youtubeUrl?: string
   title: string
   bodyShort?: string
   bodyFull?: string
@@ -340,6 +343,11 @@ export interface Hero {
 export interface MediaAsset {
   id: string
   fileUrl: string
+  // Storage object path, kept alongside fileUrl so deletion doesn't need to
+  // reverse-engineer a path from the download URL. Optional because assets
+  // uploaded before this field existed don't have it — deleteMediaAsset
+  // falls back to parsing fileUrl for those.
+  storagePath?: string
   type: 'image' | 'document'
   altText?: string
   uploadedBy: string

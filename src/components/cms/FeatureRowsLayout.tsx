@@ -1,6 +1,8 @@
 import clsx from 'clsx'
 import ItemLink from './ItemLink'
+import YoutubeThumb from './YoutubeThumb'
 import RichText from '../RichText'
+import { getYoutubeVideoId } from '../../lib/youtube'
 import type { Item, MediaAsset } from '../../types/models'
 
 export default function FeatureRowsLayout({ items, mediaMap }: { items: Item[]; mediaMap: Record<string, MediaAsset> }) {
@@ -8,6 +10,7 @@ export default function FeatureRowsLayout({ items, mediaMap }: { items: Item[]; 
     <div className="flex flex-col gap-14">
       {items.map((item, idx) => {
         const image = item.imageId ? mediaMap[item.imageId] : undefined
+        const videoId = item.youtubeUrl ? getYoutubeVideoId(item.youtubeUrl) : null
         const reversed = idx % 2 === 1
         return (
           <ItemLink
@@ -16,7 +19,11 @@ export default function FeatureRowsLayout({ items, mediaMap }: { items: Item[]; 
             className={clsx('flex flex-col items-center gap-8 md:flex-row', reversed && 'md:flex-row-reverse')}
           >
             <div className="aspect-[4/3] w-full flex-1 overflow-hidden rounded-lg bg-sand-100">
-              {image && <img src={image.fileUrl} alt={image.altText} className="h-full w-full object-cover" />}
+              {videoId ? (
+                <YoutubeThumb videoId={videoId} />
+              ) : (
+                image && <img src={image.fileUrl} alt={image.altText} className="h-full w-full object-cover" />
+              )}
             </div>
             <div className="flex-1">
               {item.tag && (

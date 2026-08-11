@@ -2,6 +2,7 @@ import { useState } from 'react'
 import MediaPicker from '../../../components/cms/MediaPicker'
 import { RichTextHint } from '../../../components/RichText'
 import { createItem, updateItem, deleteItem } from '../../../lib/firestore/items'
+import { getYoutubeVideoId } from '../../../lib/youtube'
 import type { Item, MediaAsset } from '../../../types/models'
 
 type LinkMode = 'none' | 'external' | 'detail'
@@ -27,6 +28,7 @@ export default function ItemForm({ sectionId, order, item, onSaved, onCancel }: 
   const [tag, setTag] = useState(item?.tag ?? '')
   const [image, setImage] = useState<MediaAsset | null>(null)
   const [imageId, setImageId] = useState(item?.imageId)
+  const [youtubeUrl, setYoutubeUrl] = useState(item?.youtubeUrl ?? '')
   const [linkMode, setLinkMode] = useState<LinkMode>(linkModeOf(item ?? {}))
   const [externalLink, setExternalLink] = useState(item?.externalLink ?? '')
   const [gallery, setGallery] = useState<string[]>(item?.gallery ?? [])
@@ -54,6 +56,7 @@ export default function ItemForm({ sectionId, order, item, onSaved, onCancel }: 
         bodyFull: bodyFull || undefined,
         tag: tag || undefined,
         imageId: imageId,
+        youtubeUrl: youtubeUrl || undefined,
         gallery: gallery.length ? gallery : undefined,
         attachments: attachments.length ? attachments : undefined,
         relatedLinks: relatedLinks.length ? relatedLinks : undefined,
@@ -131,6 +134,19 @@ export default function ItemForm({ sectionId, order, item, onSaved, onCancel }: 
           }}
         />
       </div>
+
+      <label className="mt-3 flex flex-col gap-1 text-sm text-slate-700">
+        YouTube video (optional — shown instead of the image above)
+        <input
+          value={youtubeUrl}
+          onChange={(e) => setYoutubeUrl(e.target.value)}
+          placeholder="https://www.youtube.com/watch?v=…"
+          className="rounded-md border border-sand-200 bg-white px-3 py-2"
+        />
+        {youtubeUrl && !getYoutubeVideoId(youtubeUrl) && (
+          <span className="text-xs text-red-600">Doesn't look like a YouTube URL — check it and try again.</span>
+        )}
+      </label>
 
       <div className="mt-4">
         <p className="text-sm text-slate-700">On click</p>

@@ -9,9 +9,14 @@ interface MediaPickerProps {
   accept: 'image' | 'document'
   selectedAssetId?: string
   onSelect: (asset: MediaAsset | null) => void
+  // Admin CMS contexts (default) can browse and reuse anything already in
+  // the media library. Self-service contexts (a participant uploading their
+  // own profile photo) get upload-only — no grid of every other uploaded
+  // file, admin-only browsing per project-docs meeting notes 2026-08-11.
+  browseExisting?: boolean
 }
 
-export default function MediaPicker({ label, accept, selectedAssetId, onSelect }: MediaPickerProps) {
+export default function MediaPicker({ label, accept, selectedAssetId, onSelect, browseExisting = true }: MediaPickerProps) {
   const { firebaseUser } = useAuth()
   const [open, setOpen] = useState(false)
   const [assets, setAssets] = useState<MediaAsset[]>([])
@@ -21,9 +26,9 @@ export default function MediaPicker({ label, accept, selectedAssetId, onSelect }
   const selected = assets.find((a) => a.id === selectedAssetId)
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !browseExisting) return
     listMedia().then((all) => setAssets(all.filter((a) => a.type === accept)))
-  }, [open, accept])
+  }, [open, accept, browseExisting])
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -82,32 +87,34 @@ export default function MediaPicker({ label, accept, selectedAssetId, onSelect }
             />
           </label>
 
-          <div className="mt-3 grid grid-cols-6 gap-2">
-            {assets.map((asset) => (
-              <button
-                key={asset.id}
-                type="button"
-                onClick={() => {
-                  onSelect(asset)
-                  setOpen(false)
-                }}
-                className={clsx(
-                  'aspect-square overflow-hidden rounded border-2',
-                  asset.id === selectedAssetId ? 'border-gold-500' : 'border-transparent'
-                )}
-                title={asset.altText}
-              >
-                {accept === 'image' ? (
-                  <img src={asset.fileUrl} alt={asset.altText} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center bg-sand-100 p-1 text-center text-[10px] text-slate-600">
-                    {asset.altText}
-                  </span>
-                )}
-              </button>
-            ))}
-            {assets.length === 0 && <p className="col-span-6 text-sm text-slate-400">No media uploaded yet.</p>}
-          </div>
+          {browseExisting && (
+            <div className="mt-3 grid grid-cols-6 gap-2">
+              {assets.map((asset) => (
+                <button
+                  key={asset.id}
+                  type="button"
+                  onClick={() => {
+                    onSelect(asset)
+                    setOpen(false)
+                  }}
+                  className={clsx(
+                    'aspect-square overflow-hidden rounded border-2',
+                    asset.id === selectedAssetId ? 'border-gold-500' : 'border-transparent'
+                  )}
+                  title={asset.altText}
+                >
+                  {accept === 'image' ? (
+                    <img src={asset.fileUrl} alt={asset.altText} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center bg-sand-100 p-1 text-center text-[10px] text-slate-600">
+                      {asset.altText}
+                    </span>
+                  )}
+                </button>
+              ))}
+              {assets.length === 0 && <p className="col-span-6 text-sm text-slate-400">No media uploaded yet.</p>}
+            </div>
+          )}
         </div>
       )}
     </div>

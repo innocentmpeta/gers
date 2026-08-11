@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { getItemByDetailSlug } from '../../../lib/firestore/items'
 import { getMediaAsset } from '../../../lib/firestore/media'
 import RichText from '../../../components/RichText'
+import { getYoutubeVideoId, getYoutubeEmbedUrl } from '../../../lib/youtube'
 import type { Item, MediaAsset } from '../../../types/models'
 
 export default function ItemDetailPage() {
@@ -37,13 +38,27 @@ export default function ItemDetailPage() {
     return <div className="mx-auto max-w-3xl px-6 py-24 text-slate-400">Not found.</div>
   }
 
+  const videoId = item.youtubeUrl ? getYoutubeVideoId(item.youtubeUrl) : null
+
   return (
     <article className="mx-auto max-w-3xl px-6 py-16">
       {item.tag && <p className="text-sm uppercase tracking-wide text-gold-600">{item.tag}</p>}
       <h1 className="mt-2 text-4xl">{item.title}</h1>
 
-      {heroImage && (
-        <img src={heroImage.fileUrl} alt={heroImage.altText} className="mt-6 w-full rounded-lg object-cover" />
+      {videoId ? (
+        <div className="mt-6 aspect-video w-full overflow-hidden rounded-lg">
+          <iframe
+            src={getYoutubeEmbedUrl(videoId)}
+            title={item.title}
+            className="h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      ) : (
+        heroImage && (
+          <img src={heroImage.fileUrl} alt={heroImage.altText} className="mt-6 w-full rounded-lg object-cover" />
+        )
       )}
 
       {item.bodyFull && (
