@@ -1,7 +1,15 @@
 import { doc, runTransaction, deleteField, type FieldValue, type Transaction } from 'firebase/firestore'
 import { db } from '../firebase'
 import { where, orderBy, listWhere, createDoc, updateDocById, omitUndefined } from './crud'
-import type { AttendanceMode, ConfirmationStatus, Invite, ParticipationRole, Registration, Symposium } from '../../types/models'
+import type {
+  AttendanceDayChoice,
+  AttendanceMode,
+  ConfirmationStatus,
+  Invite,
+  ParticipationRole,
+  Registration,
+  Symposium,
+} from '../../types/models'
 
 const col = 'registrations'
 const symposiaCol = 'symposia'
@@ -178,7 +186,8 @@ function bumpCounter(tx: Transaction, symposiumId: string, symposium: Symposium,
 export async function attemptConfirm(
   registrationId: string,
   symposiumId: string,
-  mealPreference?: string
+  mealPreference?: string,
+  attendanceDays?: Record<string, AttendanceDayChoice>
 ): Promise<ConfirmationStatus> {
   return runTransaction(db, async (tx) => {
     const { registration, symposium } = await loadPair(tx, registrationId, symposiumId)
@@ -186,12 +195,19 @@ export async function attemptConfirm(
     const mode = registration.attendanceMode
     const now = new Date().toISOString()
     const meal = mealPreference ?? registration.mealPreference
+    const days = attendanceDays ?? registration.attendanceDays
 
     if (hasRoom(symposium, mode)) {
       bumpCounter(tx, symposiumId, symposium, mode, 1)
       tx.update(
         regRef(registrationId),
-        omitUndefined({ confirmationStatus: 'confirmed', confirmedAt: now, mealPreference: meal, updatedAt: now })
+        omitUndefined({
+          confirmationStatus: 'confirmed',
+          confirmedAt: now,
+          mealPreference: meal,
+          attendanceDays: days,
+          updatedAt: now,
+        })
       )
       return 'confirmed'
     }
@@ -203,6 +219,7 @@ export async function attemptConfirm(
         waitlistedAt: now,
         offerExpiresAt: deleteField(),
         mealPreference: meal,
+        attendanceDays: days,
         updatedAt: now,
       })
     )

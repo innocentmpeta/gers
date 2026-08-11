@@ -15,9 +15,23 @@ import OrganizationEditor from '../OrganizationEditor'
 import AccountProfileEditor from '../AccountProfileEditor'
 import ChangePasswordCard from '../../../components/ChangePasswordCard'
 import ChangeEmailCard from '../../../components/ChangeEmailCard'
-import type { AbstractSubmission, AttendanceMode, ParticipationRole, Registration, Symposium } from '../../../types/models'
+import { getSymposiumDays, formatSymposiumDay } from '../../../lib/symposiumDays'
+import type {
+  AbstractSubmission,
+  AttendanceDayChoice,
+  AttendanceMode,
+  ParticipationRole,
+  Registration,
+  Symposium,
+} from '../../../types/models'
 
 const MEAL_OPTIONS = ['Standard', 'Vegetarian', 'Vegan', 'Halal', 'No meal']
+
+const DAY_CHOICE_LABEL: Record<AttendanceDayChoice, string> = {
+  face_to_face: 'In-person',
+  online: 'Online',
+  none: 'None',
+}
 
 const STATUS_LABEL: Record<Registration['status'], string> = {
   pending_approval: 'Pending approval',
@@ -58,6 +72,7 @@ export default function AccountHome() {
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const [mealPreference, setMealPreference] = useState(MEAL_OPTIONS[0])
+  const [attendanceDays, setAttendanceDays] = useState<Record<string, AttendanceDayChoice>>({})
   const [actionPending, setActionPending] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -94,6 +109,21 @@ export default function AccountHome() {
     load()
   }, [load])
 
+  // Defaults every symposium day to "In-person" for someone invited to
+  // attend that way — they opt specific days down to Online/None rather
+  // than opting each one up, which matches what an in-person invite implies.
+  // Only runs once the registration is actually confirmable, and respects
+  // any choices already saved (e.g. re-opening this after a partial save).
+  useEffect(() => {
+    if (!symposium || !registration) return
+    const days = getSymposiumDays(symposium)
+    const defaults: Record<string, AttendanceDayChoice> = {}
+    days.forEach((day) => {
+      defaults[day] = registration.attendanceDays?.[day] ?? 'face_to_face'
+    })
+    setAttendanceDays(defaults)
+  }, [symposium, registration])
+
   async function handleLogOut() {
     await logOut()
     navigate('/')
@@ -119,7 +149,7 @@ export default function AccountHome() {
   const handleConfirm = () =>
     runAction(async () => {
       if (!registration || !symposium) return
-      await attemptConfirm(registration.id, symposium.id, mealPreference)
+      await attemptConfirm(registration.id, symposium.id, mealPreference, attendanceDays)
     })
 
   const handleAccept = () =>
@@ -203,6 +233,16 @@ export default function AccountHome() {
                 <>
                   <dt className="text-slate-500">Confirmed</dt>
                   <dd>Yes{registration.mealPreference && ` — ${registration.mealPreference}`}</dd>
+                  {registration.attendanceDays && Object.keys(registration.attendanceDays).length > 0 && (
+                    <>
+                      <dt className="text-slate-500">Per day</dt>
+                      <dd>
+                        {Object.entries(registration.attendanceDays)
+                          .map(([day, choice]) => `${formatSymposiumDay(day)}: ${DAY_CHOICE_LABEL[choice]}`)
+                          .join(', ')}
+                      </dd>
+                    </>
+                  )}
                 </>
               )}
             </dl>
@@ -241,8 +281,31 @@ export default function AccountHome() {
                     ` before ${new Date(symposium.confirmationDeadline).toLocaleDateString()}`}
                   .
                 </p>
+                {getSymposiumDays(symposium).length > 0 && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    <p className="text-sm text-slate-700">Attendance per day</p>
+                    {getSymposiumDays(symposium).map((day) => (
+                      <label key={day} className="flex items-center justify-between gap-3 text-sm text-slate-600">
+                        {formatSymposiumDay(day)}
+                        <select
+                          value={attendanceDays[day] ?? 'face_to_face'}
+                          onChange={(e) =>
+                            setAttendanceDays((prev) => ({ ...prev, [day]: e.target.value as AttendanceDayChoice }))
+                          }
+                          className="rounded-md border border-sand-200 bg-white px-3 py-1.5 text-ink-950 outline-none focus:border-ink-700"
+                        >
+                          {(['face_to_face', 'online', 'none'] as AttendanceDayChoice[]).map((choice) => (
+                            <option key={choice} value={choice}>
+                              {DAY_CHOICE_LABEL[choice]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                )}
                 <label className="mt-3 flex flex-col gap-1 text-sm text-slate-700">
-                  Meal preference
+                  Dietary requirements
                   <select
                     value={mealPreference}
                     onChange={(e) => setMealPreference(e.target.value)}

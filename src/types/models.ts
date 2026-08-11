@@ -126,6 +126,15 @@ export type RegistrationStatus = 'pending_approval' | 'approved' | 'rejected' | 
 // this to 'unconfirmed' so the existing confirm+meal-preference flow applies.
 export type ConfirmationStatus = 'unconfirmed' | 'waitlisted' | 'offered' | 'confirmed'
 
+// Per-day choice within a multi-day symposium — informational only, doesn't
+// feed capacity/waitlisting (that stays keyed off the single attendanceMode
+// above, which is what the seat-counting transactions in registrations.ts
+// actually enforce). Keyed by date string ('YYYY-MM-DD', same format as
+// Symposium.startDate/endDate and Session.day) so the set of days is always
+// derived from the symposium's own date range rather than hardcoded
+// "Day 1"/"Day 2" — see src/lib/symposiumDays.ts.
+export type AttendanceDayChoice = 'face_to_face' | 'online' | 'none'
+
 export interface Registration {
   id: string
   userId: string
@@ -144,6 +153,7 @@ export interface Registration {
   previousConfirmedMode?: AttendanceMode
   confirmedAt?: string
   mealPreference?: string
+  attendanceDays?: Record<string, AttendanceDayChoice>
   // Present only when this registration was created by completing an
   // organiser-sent invite (see Invite below) — lets the Firestore create
   // rule cross-check the role/mode against what the organiser actually

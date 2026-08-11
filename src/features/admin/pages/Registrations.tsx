@@ -14,7 +14,14 @@ import {
 } from '../../../lib/firestore/registrations'
 import { listUsersByIds } from '../../../lib/firestore/users'
 import { getDefaultSymposium, updateCapacitySettings } from '../../../lib/firestore/symposia'
-import type { ConfirmationStatus, Registration, Symposium, User } from '../../../types/models'
+import { formatSymposiumDay } from '../../../lib/symposiumDays'
+import type { AttendanceDayChoice, ConfirmationStatus, Registration, Symposium, User } from '../../../types/models'
+
+const DAY_CHOICE_LABEL: Record<AttendanceDayChoice, string> = {
+  face_to_face: 'In-person',
+  online: 'Online',
+  none: 'None',
+}
 
 type StatusFilter = 'all' | Registration['status']
 
@@ -353,6 +360,13 @@ export default function AdminRegistrations() {
                     {STATUS_LABEL[r.status]} · {CONFIRMATION_LABEL[r.confirmationStatus]}
                     {r.mealPreference && ` · ${r.mealPreference}`}
                   </p>
+                  {r.attendanceDays && Object.keys(r.attendanceDays).length > 0 && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      {Object.entries(r.attendanceDays)
+                        .map(([day, choice]) => `${formatSymposiumDay(day)}: ${DAY_CHOICE_LABEL[choice]}`)
+                        .join(', ')}
+                    </p>
+                  )}
                 </div>
                 <div className="flex shrink-0 gap-3 text-sm">
                   {r.status === 'pending_approval' && (
