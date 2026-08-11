@@ -11,6 +11,10 @@ import {
 } from '../../../lib/firestore/registrations'
 import { listUserAbstractSubmissions } from '../../../lib/firestore/abstractSubmissions'
 import RoleProfileEditor from '../RoleProfileEditor'
+import OrganizationEditor from '../OrganizationEditor'
+import AccountProfileEditor from '../AccountProfileEditor'
+import ChangePasswordCard from '../../../components/ChangePasswordCard'
+import ChangeEmailCard from '../../../components/ChangeEmailCard'
 import type { AbstractSubmission, AttendanceMode, ParticipationRole, Registration, Symposium } from '../../../types/models'
 
 const MEAL_OPTIONS = ['Standard', 'Vegetarian', 'Vegan', 'Halal', 'No meal']
@@ -334,6 +338,14 @@ export default function AccountHome() {
         )}
       </div>
 
+      {firebaseUser && profile && (
+        <AccountProfileEditor userId={firebaseUser.uid} profile={profile} symposiumId={symposium?.id} />
+      )}
+
+      {firebaseUser && registration?.participationRole !== 'exhibitor' && (
+        <OrganizationEditor userId={firebaseUser.uid} />
+      )}
+
       {firebaseUser &&
         registration &&
         (registration.participationRole === 'presenter' ||
@@ -341,6 +353,25 @@ export default function AccountHome() {
           registration.participationRole === 'facilitator') && (
           <RoleProfileEditor userId={firebaseUser.uid} role={registration.participationRole} />
         )}
+
+      <div className="mt-10 border-t border-sand-200 pt-8">
+        <h2 className="text-lg font-semibold text-ink-900">Community of practice</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Browse members who've opted into the directory — filter by community, and reach out via
+          whatever contact details they've chosen to share.
+        </p>
+        <Link
+          to="/directory"
+          className="mt-3 inline-flex rounded-full border border-ink-800 px-5 py-2.5 text-sm text-ink-800 hover:bg-ink-800 hover:text-sand-50"
+        >
+          Browse the directory
+        </Link>
+      </div>
+
+      <div className="mt-10 flex flex-col gap-6 border-t border-sand-200 pt-8">
+        <ChangeEmailCard />
+        <ChangePasswordCard />
+      </div>
 
       <button
         onClick={handleLogOut}

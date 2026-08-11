@@ -16,6 +16,18 @@ export type Gender = 'Female' | 'Male' | 'Prefer not to say'
 export type AgeGroup = 'Under 35 years' | '35 years and over'
 export type Disability = 'Yes' | 'No' | 'Prefer not to say'
 
+// Per "Data collected on website" doc — the fixed set of SDGs GERS tracks,
+// not the full UN list of 17.
+export type Sdg =
+  | 'SDG 6: Clean Water and Sanitation'
+  | 'SDG 7: Affordable and Clean Energy'
+  | 'SDG 11: Sustainable Cities and Communities'
+  | 'SDG 12: Responsible Consumption and Production'
+  | 'SDG 13: Climate Action'
+  | 'SDG 14: Life Below Water'
+  | 'SDG 15: Life on Land'
+  | 'SDG 17: Partnerships for the Goals'
+
 export interface User {
   id: string
   salutation?: Salutation
@@ -30,6 +42,20 @@ export interface User {
   gender?: Gender
   ageGroup?: AgeGroup
   disability?: Disability
+  // "Your public profile" fields (project-docs "Data collected on website")
+  // — self-controlled, unmoderated, and shown only in the logged-in
+  // community-of-practice directory (never on a public page). Deliberately
+  // separate from the Speaker/PartnerProfile bio+photo a presenter/exhibitor
+  // also has, which IS admin-moderated and feeds the public Experts/
+  // Exhibition pages — different trust tiers, so not the same fields.
+  bio?: string
+  areasOfInterest?: string
+  sdgs?: Sdg[]
+  photoMediaId?: string
+  // Distinct from the account's login `email` — a directory viewer sees this
+  // (if showEmail), not necessarily the address used to sign in.
+  profileEmail?: string
+  linkedinUrl?: string
   showInDirectory: boolean
   showWhatsapp: boolean
   showEmail: boolean

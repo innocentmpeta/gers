@@ -18,6 +18,7 @@ import Partners from './features/public/pages/Partners'
 import PastSymposiums from './features/public/pages/PastSymposiums'
 import Faq from './features/public/pages/Faq'
 import AccountHome from './features/account/pages/AccountHome'
+import Directory from './features/account/pages/Directory'
 import RegisterFlow from './features/account/pages/RegisterFlow'
 import AbstractSubmissionForm from './features/account/pages/AbstractSubmissionForm'
 import InviteComplete from './features/account/pages/InviteComplete'
@@ -29,6 +30,7 @@ import AdminContent from './features/admin/pages/Content'
 import AdminMedia from './features/admin/pages/Media'
 import PageEditor from './features/admin/cms/PageEditor'
 import AdminProgramme from './features/admin/pages/Programme'
+import AdminCommunities from './features/admin/pages/Communities'
 import AdminSpeakers from './features/admin/pages/Speakers'
 import AdminPartners from './features/admin/pages/Partners'
 import AdminRegistrations from './features/admin/pages/Registrations'
@@ -75,6 +77,7 @@ function App() {
 
             <Route element={<RequireAuth />}>
               <Route path="account" element={<AccountHome />} />
+              <Route path="directory" element={<Directory />} />
               <Route path="register/abstract" element={<AbstractSubmissionForm />} />
             </Route>
           </Route>
@@ -89,6 +92,7 @@ function App() {
               </Route>
               <Route element={<RequireRole capability="registrations" />}>
                 <Route path="programme" element={<AdminProgramme />} />
+                <Route path="communities" element={<AdminCommunities />} />
               </Route>
               <Route path="speakers" element={<AdminSpeakers />} />
               <Route path="partners" element={<AdminPartners />} />

@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore'
 import { db } from '../firebase'
-import { listWhere, updateDocById, omitUndefined } from './crud'
+import { listWhere, updateDocById, omitUndefined, where } from './crud'
 import type { SystemRole, User } from '../../types/models'
 
 const usersCol = 'users'
@@ -106,6 +106,12 @@ export type EditableProfileFields = Pick<
   | 'gender'
   | 'ageGroup'
   | 'disability'
+  | 'bio'
+  | 'areasOfInterest'
+  | 'sdgs'
+  | 'photoMediaId'
+  | 'profileEmail'
+  | 'linkedinUrl'
   | 'showInDirectory'
   | 'showWhatsapp'
   | 'showEmail'
@@ -114,4 +120,18 @@ export type EditableProfileFields = Pick<
 
 export async function updateOwnProfile(uid: string, fields: Partial<EditableProfileFields>): Promise<void> {
   await updateDocById(usersCol, uid, fields)
+}
+
+// Self-service — keeps the Firestore profile's email in sync after a
+// successful Firebase Auth updateEmail() call. Auth is the source of truth
+// for login; this field is what the rest of the app (directory, admin
+// lists) actually reads.
+export async function updateOwnEmail(uid: string, email: string): Promise<void> {
+  await updateDocById(usersCol, uid, { email })
+}
+
+// Powers the community-of-practice directory — small enough dataset for
+// this project's scale that a plain filtered list is fine, no pagination.
+export async function listDirectoryUsers(): Promise<User[]> {
+  return listWhere<User>(usersCol, [where('showInDirectory', '==', true)])
 }

@@ -41,10 +41,13 @@ service cloud.firestore {
 
     // ---- users ----
     match /users/{userId} {
+      // showInDirectory grants read to any signed-in member (the community-
+      // of-practice directory is logged-in-only, not public) — not to
+      // anonymous visitors.
       allow read: if isOwner(userId)
         || canAccounts()
         || canRegistrations()
-        || resource.data.showInDirectory == true;
+        || (isSignedIn() && resource.data.showInDirectory == true);
       allow create: if isOwner(userId) && request.resource.data.systemRole == null;
       // Granting a systemRole to yourself is otherwise impossible (the create
       // rule above forces it null) — the one exception is completing an
@@ -60,6 +63,7 @@ service cloud.firestore {
         || (isOwner(userId) && onlyChangedKeys([
               'salutation', 'name', 'surname', 'phone', 'whatsappNumber',
               'organization', 'jobTitle', 'sector', 'gender', 'ageGroup', 'disability',
+              'bio', 'areasOfInterest', 'sdgs', 'photoMediaId', 'profileEmail', 'linkedinUrl', 'email',
               'showInDirectory', 'showWhatsapp', 'showEmail', 'visibilityScope'
             ]))
         || (isOwner(userId)
@@ -203,9 +207,16 @@ service cloud.firestore {
     }
 
     // ---- userCommunityOptIns ----
+    // Read is any signed-in user, not owner-only — the directory needs to
+    // filter/show community membership across members, and an opt-in record
+    // is just a topic tag (same sensitivity tier as directory visibility
+    // itself), not sensitive data worth locking down further.
     match /userCommunityOptIns/{id} {
-      allow read: if isOwner(resource.data.userId) || canRegistrations();
-      allow create, update, delete: if isOwner(request.resource.data.userId) || canRegistrations();
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(request.resource.data.userId) || canRegistrations();
+      // request.resource is null on delete — must check the *existing* doc's
+      // owner (resource.data), not request.resource.data as create/update do.
+      allow delete: if isOwner(resource.data.userId) || canRegistrations();
     }
 
     // ---- sessions ----

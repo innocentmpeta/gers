@@ -14,10 +14,14 @@ const labelClass = 'flex flex-col gap-1 text-sm text-slate-700'
 // profile — bio/photo, plus slides for presenters only — that shows on
 // their respective (separate) public page, split by the `role` field.
 // Exhibitors submit an organisation-first profile instead (their card on
-// the Exhibition page leads with the org, their own name at the bottom).
-// Either way, an organisation profile also gets upserted so it shows on the
-// unified Partners page and in the footer. Submissions always start
-// hidden — an admin has to review and publish them.
+// the Exhibition page leads with the org, their own name at the bottom) —
+// that record already covers "their organisation" for exhibitors, so unlike
+// presenters/facilitators they don't also get the standalone
+// OrganizationEditor AccountHome renders for everyone else (getPartnerByUserId
+// assumes one PartnerProfile per user; giving exhibitors a second editor
+// pointed at 'partner' would just silently edit their same exhibitor record
+// under a misleading label). Submissions always start hidden — an admin has
+// to review and publish them.
 export default function RoleProfileEditor({
   userId,
   role,
@@ -27,7 +31,6 @@ export default function RoleProfileEditor({
 }) {
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = useState(false)
-  const [orgVisible, setOrgVisible] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -49,24 +52,13 @@ export default function RoleProfileEditor({
   const [exhibitorLogoId, setExhibitorLogoId] = useState<string | undefined>(undefined)
   const [exhibitorWebsiteUrl, setExhibitorWebsiteUrl] = useState('')
 
-  // Expert-only: their organisation's own profile, separate from their
-  // personal one above — feeds the same unified Partners page.
-  const [orgName, setOrgName] = useState('')
-  const [orgBlurb, setOrgBlurb] = useState('')
-  const [orgLogo, setOrgLogo] = useState<MediaAsset | null>(null)
-  const [orgLogoId, setOrgLogoId] = useState<string | undefined>(undefined)
-  const [orgWebsiteUrl, setOrgWebsiteUrl] = useState('')
-
   const isPresenter = role === 'presenter'
   const isExpert = role === 'presenter' || role === 'facilitator'
 
   useEffect(() => {
     async function load() {
       if (isExpert) {
-        const [existingSpeaker, existingOrg] = await Promise.all([
-          getSpeakerByUserId(userId),
-          getPartnerByUserId(userId),
-        ])
+        const existingSpeaker = await getSpeakerByUserId(userId)
         if (existingSpeaker) {
           setName(existingSpeaker.name)
           setTitle(existingSpeaker.title ?? '')
@@ -74,13 +66,6 @@ export default function RoleProfileEditor({
           setPhotoId(existingSpeaker.photoMediaId)
           setPresentationId(existingSpeaker.presentationMediaId)
           setVisible(existingSpeaker.visible)
-        }
-        if (existingOrg) {
-          setOrgName(existingOrg.name)
-          setOrgBlurb(existingOrg.blurb ?? '')
-          setOrgLogoId(existingOrg.logoMediaId)
-          setOrgWebsiteUrl(existingOrg.websiteUrl ?? '')
-          setOrgVisible(existingOrg.visible)
         }
       } else {
         const existing = await getPartnerByUserId(userId)
@@ -112,15 +97,6 @@ export default function RoleProfileEditor({
           photoMediaId: photo?.id ?? photoId,
           presentationMediaId: presentation?.id ?? presentationId,
         })
-        if (orgName) {
-          await upsertOwnPartnerProfile(userId, 'partner', {
-            name: orgName,
-            blurb: orgBlurb || undefined,
-            logoMediaId: orgLogo?.id ?? orgLogoId,
-            imageMediaId: undefined,
-            websiteUrl: orgWebsiteUrl || undefined,
-          })
-        }
       } else {
         await upsertOwnPartnerProfile(userId, 'exhibitor', {
           name: exhibitorOrgName,
@@ -227,51 +203,6 @@ export default function RoleProfileEditor({
               className={inputClass}
             />
           </label>
-        </div>
-      )}
-
-      {isExpert && (
-        <div className="mt-10 border-t border-sand-200 pt-8">
-          <h2 className="text-lg font-semibold text-ink-900">Your organization</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {orgName
-              ? orgVisible
-                ? "Live on the Partners page and in the footer — changes you save here go back to pending review."
-                : 'Pending admin review — not on the site yet.'
-              : "Shown on the Partners page and in the site footer. Leave the name blank if your organization shouldn't be listed."}
-          </p>
-
-          <div className="mt-4 flex flex-col gap-4">
-            <label className={labelClass}>
-              Organization name
-              <input value={orgName} onChange={(e) => setOrgName(e.target.value)} className={inputClass} />
-            </label>
-            <MediaPicker
-              label="Organization logo"
-              accept="image"
-              selectedAssetId={orgLogo?.id ?? orgLogoId}
-              onSelect={setOrgLogo}
-              browseExisting={false}
-            />
-            <label className={labelClass}>
-              About your organization
-              <textarea
-                rows={3}
-                value={orgBlurb}
-                onChange={(e) => setOrgBlurb(e.target.value)}
-                className={inputClass}
-              />
-              <RichTextHint />
-            </label>
-            <label className={labelClass}>
-              Website (optional)
-              <input
-                value={orgWebsiteUrl}
-                onChange={(e) => setOrgWebsiteUrl(e.target.value)}
-                className={inputClass}
-              />
-            </label>
-          </div>
         </div>
       )}
 

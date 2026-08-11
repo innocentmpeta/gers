@@ -9,6 +9,7 @@ const ADMIN_NAV = [
   { to: '/admin/programme', label: 'Programme' },
   { to: '/admin/speakers', label: 'Speakers' },
   { to: '/admin/partners', label: 'Partners' },
+  { to: '/admin/communities', label: 'Communities' },
   { to: '/admin/registrations', label: 'Registrations' },
   { to: '/admin/abstracts', label: 'Abstracts' },
   { to: '/admin/prompts', label: 'Prompts & Q&A' },
