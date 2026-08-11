@@ -10,6 +10,7 @@ import {
   inviteToAttendInPerson,
   uninviteFromInPerson,
   promoteNextWaitlisted,
+  withdrawRegistration,
 } from '../../../lib/firestore/registrations'
 import { listUsersByIds } from '../../../lib/firestore/users'
 import { getDefaultSymposium, updateCapacitySettings } from '../../../lib/firestore/symposia'
@@ -243,6 +244,12 @@ export default function AdminRegistrations() {
     load()
   }
 
+  async function handleWithdraw(id: string) {
+    if (!confirm('Withdraw this registration? They can register again later if needed.')) return
+    await withdrawRegistration(id)
+    load()
+  }
+
   async function handleUninvite(id: string) {
     if (!symposium) return
     if (!confirm("Revoke this person's in-person invitation? They'll move back to online.")) return
@@ -380,6 +387,11 @@ export default function AdminRegistrations() {
                         </option>
                       ))}
                     </select>
+                  )}
+                  {r.status === 'approved' && (
+                    <button onClick={() => handleWithdraw(r.id)} className="text-red-600 underline">
+                      Withdraw
+                    </button>
                   )}
                   <button
                     onClick={() => startLogistics(r)}

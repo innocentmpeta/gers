@@ -3,11 +3,7 @@ import { sendSignInLinkToEmail } from 'firebase/auth'
 import { auth } from '../../../lib/firebase'
 import { createInvite, listInvites } from '../../../lib/firestore/invites'
 import { listAllUsers, setUserSystemRole } from '../../../lib/firestore/users'
-import {
-  listRegistrations,
-  adminCreateAttendeeRegistration,
-  updateRegistration,
-} from '../../../lib/firestore/registrations'
+import { listRegistrations, adminCreateAttendeeRegistration } from '../../../lib/firestore/registrations'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import { useAuth } from '../../../lib/auth'
 import type {
@@ -202,16 +198,16 @@ export default function AdminAccounts() {
     await load()
   }
 
-  async function handleToggleAttendance(user: User) {
+  // Create-only — an admin role doesn't imply a symposium registration, so
+  // this covers a role-only account attending after all. Withdrawal is
+  // deliberately not here: it's Registrations-page-only, so there's one
+  // place attendees actually leave from rather than two buttons that both
+  // claim to (project-docs meeting notes 2026-08-11).
+  async function handleRegisterAttendance(user: User) {
     if (!symposium) return
     setAttendanceBusyId(user.id)
     try {
-      const existing = registrationsByUser.get(user.id)
-      if (existing) {
-        await updateRegistration(existing.id, { status: 'withdrawn' })
-      } else {
-        await adminCreateAttendeeRegistration(user.id, symposium.id)
-      }
+      await adminCreateAttendeeRegistration(user.id, symposium.id)
       await load()
     } finally {
       setAttendanceBusyId(null)
@@ -502,17 +498,15 @@ export default function AdminAccounts() {
                     </option>
                   ))}
                 </select>
-                <button
-                  onClick={() => handleToggleAttendance(user)}
-                  disabled={!symposium || attendanceBusyId === user.id}
-                  className="whitespace-nowrap text-ink-800 underline disabled:opacity-60"
-                >
-                  {attendanceBusyId === user.id
-                    ? 'Working…'
-                    : registration
-                      ? 'Withdraw attendance'
-                      : 'Register for attendance'}
-                </button>
+                {!registration && (
+                  <button
+                    onClick={() => handleRegisterAttendance(user)}
+                    disabled={!symposium || attendanceBusyId === user.id}
+                    className="whitespace-nowrap text-ink-800 underline disabled:opacity-60"
+                  >
+                    {attendanceBusyId === user.id ? 'Working…' : 'Register for attendance'}
+                  </button>
+                )}
               </div>
             </div>
           )

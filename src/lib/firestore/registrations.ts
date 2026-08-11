@@ -113,8 +113,12 @@ export async function rejectRegistration(id: string, approvedBy: string): Promis
   await updateRegistration(id, { status: 'rejected', approvedBy, approvedAt: new Date().toISOString() })
 }
 
-// Self-service — an approved online participant deciding not to attend.
-// Rules only permit this exact 'approved' -> 'withdrawn' transition.
+// Both self-service (an approved participant deciding not to attend — rules
+// only permit this exact 'approved' -> 'withdrawn' transition for the owner)
+// and admin-initiated from the Registrations page. Withdrawal only ever
+// happens here, not from Accounts & Roles — see AdminAccounts.tsx
+// handleRegisterAttendance, which is create-only (project-docs meeting
+// notes 2026-08-11: one place attendees leave from, not two).
 export async function withdrawRegistration(id: string): Promise<void> {
   await updateRegistration(id, { status: 'withdrawn' })
 }
