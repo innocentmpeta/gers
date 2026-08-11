@@ -233,8 +233,8 @@ function SpeakerForm({
           onChange={(e) => setDraft({ ...draft, role: e.target.value as SpeakerRole })}
           className="rounded-md border border-sand-200 px-3 py-2"
         >
-          <option value="presenter">Presenter (Speakers page)</option>
-          <option value="facilitator">Facilitator (Facilitators page)</option>
+          <option value="presenter">Presenter</option>
+          <option value="facilitator">Facilitator</option>
         </select>
       </label>
       <label className="flex flex-col gap-1 text-sm text-slate-700">

@@ -406,8 +406,8 @@ export interface KnowledgeBaseDocument {
 // registration is confirmed is a natural Phase 5/6 enhancement that writes
 // INTO this collection rather than exposing Registration itself.
 // Presenters and facilitators submit the same shape and share this one
-// collection, but show on two separate public pages/nav items (not a
-// combined "Experts" page) — this field is what splits them back apart.
+// collection, showing together on the combined "Experts" page — this field
+// is what badges each card Speaker vs Facilitator.
 export type SpeakerRole = 'presenter' | 'facilitator'
 
 export interface Speaker {

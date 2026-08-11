@@ -1,6 +1,6 @@
 import { deleteField } from 'firebase/firestore'
 import { where, orderBy, listWhere, createDoc, updateDocById, removeDoc } from './crud'
-import type { Speaker, SpeakerRole } from '../../types/models'
+import type { Speaker } from '../../types/models'
 
 const col = 'speakers'
 
@@ -22,15 +22,6 @@ export async function setSpeakerSession(speakerId: string, sessionId: string | n
 
 export async function listVisibleSpeakers(): Promise<Speaker[]> {
   return listWhere<Speaker>(col, [where('visible', '==', true), orderBy('order', 'asc')])
-}
-
-// Speakers and Facilitators show on two separate public pages, each only
-// ever needing its own role — filtering client-side (rather than a
-// composite where('role','==',...) index) since listVisibleSpeakers()
-// already has to fetch the whole small collection either way.
-export async function listVisibleSpeakersByRole(role: SpeakerRole): Promise<Speaker[]> {
-  const all = await listVisibleSpeakers()
-  return all.filter((s) => s.role === role)
 }
 
 export async function createSpeaker(data: Omit<Speaker, 'id'>): Promise<string> {

@@ -7,8 +7,7 @@ import { useHeroOverlay } from '../lib/heroOverlay'
 const SYMPOSIUM_ITEMS = [
   { to: '/symposium', label: 'Overview', end: true },
   { to: '/symposium/programme', label: 'Programme' },
-  { to: '/symposium/speakers', label: 'Speakers' },
-  { to: '/symposium/facilitators', label: 'Facilitators' },
+  { to: '/symposium/speakers', label: 'Experts' },
   { to: '/symposium/exhibition', label: 'Exhibition' },
   { to: '/symposium/student-track', label: 'Student Track' },
   { to: '/symposium/partners', label: 'Partners' },
@@ -84,7 +83,7 @@ export default function Header() {
           >
             {({ isActive }) => (
               <>
-                About
+                About Us
                 <span
                   className={clsx(
                     'pointer-events-none absolute -bottom-0.5 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-200 group-hover:scale-x-100',
@@ -212,7 +211,7 @@ export default function Header() {
         <div className="max-h-[calc(100svh-192px)] overflow-y-auto border-t border-gold-600/30 bg-gold-500 lg:hidden">
           <nav className="flex flex-col px-[5%] py-4 text-ink-900">
             <NavLink to="/about" onClick={closeMobile} className="border-b border-ink-900/10 py-3">
-              About
+              About Us
             </NavLink>
 
             <button

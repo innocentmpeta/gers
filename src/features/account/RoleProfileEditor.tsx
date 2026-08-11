@@ -11,8 +11,8 @@ const labelClass = 'flex flex-col gap-1 text-sm text-slate-700'
 
 // Shown on the account page once a registration holds a role that gets a
 // public profile. Presenters and facilitators both submit a personal
-// profile — bio/photo, plus slides for presenters only — that shows on
-// their respective (separate) public page, split by the `role` field.
+// profile — bio/photo, plus slides for presenters only — that shows
+// together on the combined Experts page, badged by the `role` field.
 // Exhibitors submit an organisation-first profile instead (their card on
 // the Exhibition page leads with the org, their own name at the bottom) —
 // that record already covers "their organisation" for exhibitors, so unlike
