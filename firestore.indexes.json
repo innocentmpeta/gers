@@ -58,6 +58,14 @@
         { "fieldPath": "visible", "order": "ASCENDING" },
         { "fieldPath": "order", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "symposiumDocuments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "symposiumId", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

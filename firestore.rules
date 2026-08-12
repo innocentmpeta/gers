@@ -336,5 +336,13 @@ service cloud.firestore {
     match /knowledgeBaseDocuments/{id} {
       allow read, write: if canCMS();
     }
+
+    // ---- symposiumDocuments (admin-uploaded presentations/reports, shown
+    // on AccountHome when flagged visible — logged-in-only, not public,
+    // same as the directory) ----
+    match /symposiumDocuments/{id} {
+      allow read: if canRegistrations() || (isSignedIn() && resource.data.visibleToAttendees == true);
+      allow write: if canRegistrations();
+    }
   }
 }

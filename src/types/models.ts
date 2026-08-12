@@ -399,6 +399,26 @@ export interface KnowledgeBaseDocument {
   uploadedAt: string
 }
 
+export type DocumentCategory = 'presentation' | 'report' | 'other'
+
+// Admin-uploaded symposium documents (presentations, reports, etc) —
+// separate from KnowledgeBaseDocument (that one feeds the FAQ bot, not
+// meant for attendees to download) and from MediaAsset's own gallery (this
+// carries symposium/category/visibility, MediaAsset is just the file).
+// visibleToAttendees controls whether it shows on AccountHome — admin can
+// stage a document ahead of publishing it.
+export interface SymposiumDocument {
+  id: string
+  symposiumId: string
+  mediaAssetId: string
+  title: string
+  category: DocumentCategory
+  visibleToAttendees: boolean
+  order: number
+  uploadedBy: string
+  uploadedAt: string
+}
+
 // Public-safe speaker profile — deliberately NOT derived by exposing raw
 // Registration documents to public reads, since a presenter's Registration
 // also carries payment amounts, accommodation address, and meal preference.

@@ -15,6 +15,7 @@ import OrganizationEditor from '../OrganizationEditor'
 import AccountProfileEditor from '../AccountProfileEditor'
 import ChangePasswordCard from '../../../components/ChangePasswordCard'
 import ChangeEmailCard from '../../../components/ChangeEmailCard'
+import SymposiumDocuments from '../SymposiumDocuments'
 import { getSymposiumDays, formatSymposiumDay } from '../../../lib/symposiumDays'
 import type {
   AbstractSubmission,
@@ -400,6 +401,8 @@ export default function AccountHome() {
           </div>
         )}
       </div>
+
+      {symposium && <SymposiumDocuments symposiumId={symposium.id} />}
 
       {firebaseUser && profile && (
         <AccountProfileEditor userId={firebaseUser.uid} profile={profile} symposiumId={symposium?.id} />

@@ -30,6 +30,7 @@ import AdminMedia from './features/admin/pages/Media'
 import PageEditor from './features/admin/cms/PageEditor'
 import AdminProgramme from './features/admin/pages/Programme'
 import AdminCommunities from './features/admin/pages/Communities'
+import AdminDocuments from './features/admin/pages/Documents'
 import AdminSpeakers from './features/admin/pages/Speakers'
 import AdminPartners from './features/admin/pages/Partners'
 import AdminRegistrations from './features/admin/pages/Registrations'
@@ -92,6 +93,7 @@ function App() {
               <Route element={<RequireRole capability="registrations" />}>
                 <Route path="programme" element={<AdminProgramme />} />
                 <Route path="communities" element={<AdminCommunities />} />
+                <Route path="documents" element={<AdminDocuments />} />
               </Route>
               <Route path="speakers" element={<AdminSpeakers />} />
               <Route path="partners" element={<AdminPartners />} />
