@@ -102,7 +102,7 @@ export default function HeroBlock({ hero, size = 'compact' }: HeroBlockProps) {
             <RichText text={hero.subtext} />
           </p>
         )}
-        {dateRange && <p className="mt-3 text-xl font-medium text-gold-500">{dateRange}</p>}
+        {dateRange && <p className="mt-3 whitespace-nowrap text-xl font-medium text-gold-500">{dateRange}</p>}
         {(hero.cta1Label || hero.cta2Label) && (
           <div className="mt-6 flex gap-3">
             {hero.cta1Label && hero.cta1Link && (
