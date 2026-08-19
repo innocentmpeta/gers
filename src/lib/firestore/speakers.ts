@@ -1,11 +1,15 @@
 import { deleteField } from 'firebase/firestore'
-import { where, orderBy, listWhere, createDoc, updateDocById, removeDoc } from './crud'
+import { where, orderBy, listWhere, getById, createDoc, updateDocById, removeDoc } from './crud'
 import type { Speaker } from '../../types/models'
 
 const col = 'speakers'
 
 export async function listSpeakers(): Promise<Speaker[]> {
   return listWhere<Speaker>(col, [orderBy('order', 'asc')])
+}
+
+export async function getSpeaker(id: string): Promise<Speaker | null> {
+  return getById<Speaker>(col, id)
 }
 
 export async function listSpeakersForSession(sessionId: string): Promise<Speaker[]> {

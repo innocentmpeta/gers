@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import HeroBlock from '../../../components/cms/HeroBlock'
 import RichText from '../../../components/RichText'
 import { usePageHero } from '../cms/usePageHero'
@@ -12,22 +13,30 @@ const GROUP_LABEL: Record<SpeakerRole, string> = {
 }
 const GROUP_ORDER: SpeakerRole[] = ['presenter', 'facilitator']
 
+// The card only ever shows a short excerpt — a full professional bio reads
+// cramped and unpolished in a narrow grid card, so "Read more" leads to
+// SpeakerDetailPage.tsx for the complete bio, presentation, session, and
+// affiliated organisation.
 function SpeakerCard({ speaker, photo }: { speaker: Speaker; photo?: MediaAsset }) {
   return (
-    <div id={speaker.id} className="scroll-mt-32 overflow-hidden rounded-lg border border-sand-200 bg-white">
+    <Link
+      to={`/symposium/speakers/${speaker.id}`}
+      className="group flex flex-col overflow-hidden rounded-lg border border-sand-200 bg-white transition-shadow hover:shadow-md"
+    >
       <div className="aspect-square bg-sand-100">
         {photo && <img src={photo.fileUrl} alt={photo.altText} className="h-full w-full object-cover" />}
       </div>
-      <div className="p-5">
-        <p className="text-lg text-ink-900">{speaker.name}</p>
+      <div className="flex flex-1 flex-col p-5">
+        <p className="text-lg text-ink-900 group-hover:underline">{speaker.name}</p>
         {speaker.title && <p className="mt-1 text-sm text-gold-600">{speaker.title}</p>}
         {speaker.bio && (
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 line-clamp-3 text-sm text-slate-500">
             <RichText text={speaker.bio} />
           </p>
         )}
+        <span className="mt-auto pt-3 text-sm font-medium text-ink-800">Read more →</span>
       </div>
-    </div>
+    </Link>
   )
 }
 
