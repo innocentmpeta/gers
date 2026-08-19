@@ -67,7 +67,7 @@ export default function Header() {
           <img
             src={overlay ? '/logo-gold.png' : '/logo-white.png'}
             alt="GERS — Gauteng Environmental Research Symposium"
-            className="h-16 w-auto"
+            className="-mt-2 h-[4.8rem] w-auto"
           />
         </NavLink>
 
