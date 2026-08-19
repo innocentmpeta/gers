@@ -118,6 +118,15 @@ export default function AdminPartners() {
     load()
   }
 
+  async function move(partner: PartnerProfile, direction: -1 | 1) {
+    const idx = partners.findIndex((p) => p.id === partner.id)
+    const swapWith = partners[idx + direction]
+    if (!swapWith) return
+    await updatePartner(partner.id, { order: swapWith.order })
+    await updatePartner(swapWith.id, { order: partner.order })
+    load()
+  }
+
   const formOpen = adding || editingId
 
   return (
@@ -143,7 +152,7 @@ export default function AdminPartners() {
       </div>
 
       <div className="mt-6 flex flex-col gap-3">
-        {partners.map((partner) =>
+        {partners.map((partner, idx) =>
           editingId === partner.id ? (
             <div key={partner.id} className="rounded-lg border border-sand-200 bg-white p-4">
               <PartnerForm
@@ -163,16 +172,30 @@ export default function AdminPartners() {
               key={partner.id}
               className="flex items-center justify-between rounded-lg border border-sand-200 bg-white p-4"
             >
-              <div>
-                <p className="text-ink-900">{partner.name}</p>
-                {!partner.visible && partner.userId && (
-                  <p className="text-xs text-gold-600">Self-submitted — pending review</p>
-                )}
-                {!partner.visible && !partner.userId && (
-                  <p className="text-xs text-red-600">Hidden from public site</p>
-                )}
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col text-slate-400">
+                  <button onClick={() => move(partner, -1)} disabled={idx === 0} className="disabled:opacity-30">
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => move(partner, 1)}
+                    disabled={idx === partners.length - 1}
+                    className="disabled:opacity-30"
+                  >
+                    ▼
+                  </button>
+                </div>
+                <div>
+                  <p className="text-ink-900">{partner.name}</p>
+                  {!partner.visible && partner.userId && (
+                    <p className="text-xs text-gold-600">Self-submitted — pending review</p>
+                  )}
+                  {!partner.visible && !partner.userId && (
+                    <p className="text-xs text-red-600">Hidden from public site</p>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-3 text-sm">
+              <div className="flex gap-3 text-sm shrink-0">
                 <button onClick={() => toggleVisible(partner)} className="text-ink-800 underline">
                   {partner.visible ? 'Hide' : 'Show'}
                 </button>

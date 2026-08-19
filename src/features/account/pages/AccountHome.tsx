@@ -10,7 +10,6 @@ import {
   withdrawRegistration,
 } from '../../../lib/firestore/registrations'
 import { listUserAbstractSubmissions } from '../../../lib/firestore/abstractSubmissions'
-import RoleProfileEditor from '../RoleProfileEditor'
 import OrganizationEditor from '../OrganizationEditor'
 import AccountProfileEditor from '../AccountProfileEditor'
 import ChangePasswordCard from '../../../components/ChangePasswordCard'
@@ -412,13 +411,17 @@ export default function AccountHome() {
         <OrganizationEditor userId={firebaseUser.uid} />
       )}
 
-      {firebaseUser &&
-        registration &&
-        (registration.participationRole === 'presenter' ||
-          registration.participationRole === 'exhibitor' ||
-          registration.participationRole === 'facilitator') && (
-          <RoleProfileEditor userId={firebaseUser.uid} role={registration.participationRole} />
-        )}
+      {/* RoleProfileEditor (the old presenter/facilitator/exhibitor-specific
+          "Your public profile" form, which feeds the Speaker/Exhibition
+          public cards) is deliberately not rendered here anymore — it was
+          showing alongside AccountProfileEditor's own "Your public profile"
+          section above, which read as two duplicate/confusing forms per
+          organiser feedback 2026-08-12. Admin currently creates Speaker/
+          Exhibitor cards manually either way (see admin Speakers/Partners
+          pages), so removing self-submission from this screen doesn't lose
+          any actual capability right now. Re-linking AccountProfileEditor's
+          fields to the public cards is tracked separately (not urgent per
+          that same feedback) rather than restoring this duplicate form. */}
 
       <div className="mt-10 border-t border-sand-200 pt-8">
         <h2 className="text-lg font-semibold text-ink-900">Community of practice</h2>

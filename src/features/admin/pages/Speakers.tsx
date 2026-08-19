@@ -113,6 +113,15 @@ export default function AdminSpeakers() {
     load()
   }
 
+  async function move(speaker: Speaker, direction: -1 | 1) {
+    const idx = speakers.findIndex((s) => s.id === speaker.id)
+    const swapWith = speakers[idx + direction]
+    if (!swapWith) return
+    await updateSpeaker(speaker.id, { order: swapWith.order })
+    await updateSpeaker(swapWith.id, { order: speaker.order })
+    load()
+  }
+
   const formOpen = adding || editingId
 
   return (
@@ -125,7 +134,7 @@ export default function AdminSpeakers() {
       </p>
 
       <div className="mt-6 flex flex-col gap-3">
-        {speakers.map((speaker) =>
+        {speakers.map((speaker, idx) =>
           editingId === speaker.id ? (
             <div key={speaker.id} className="rounded-lg border border-sand-200 bg-white p-4">
               <SpeakerForm
@@ -143,20 +152,34 @@ export default function AdminSpeakers() {
             </div>
           ) : (
             <div key={speaker.id} className="flex items-center justify-between rounded-lg border border-sand-200 bg-white p-4">
-              <div>
-                <p className="text-ink-900">
-                  {speaker.name}{' '}
-                  <span className="text-xs font-normal text-slate-400">
-                    ({speaker.role === 'facilitator' ? 'Facilitator' : 'Presenter'})
-                  </span>
-                </p>
-                {speaker.title && <p className="text-sm text-slate-500">{speaker.title}</p>}
-                {!speaker.visible && speaker.userId && (
-                  <p className="text-xs text-gold-600">Self-submitted — pending review</p>
-                )}
-                {!speaker.visible && !speaker.userId && <p className="text-xs text-red-600">Hidden from public site</p>}
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col text-slate-400">
+                  <button onClick={() => move(speaker, -1)} disabled={idx === 0} className="disabled:opacity-30">
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => move(speaker, 1)}
+                    disabled={idx === speakers.length - 1}
+                    className="disabled:opacity-30"
+                  >
+                    ▼
+                  </button>
+                </div>
+                <div>
+                  <p className="text-ink-900">
+                    {speaker.name}{' '}
+                    <span className="text-xs font-normal text-slate-400">
+                      ({speaker.role === 'facilitator' ? 'Facilitator' : 'Presenter'})
+                    </span>
+                  </p>
+                  {speaker.title && <p className="text-sm text-slate-500">{speaker.title}</p>}
+                  {!speaker.visible && speaker.userId && (
+                    <p className="text-xs text-gold-600">Self-submitted — pending review</p>
+                  )}
+                  {!speaker.visible && !speaker.userId && <p className="text-xs text-red-600">Hidden from public site</p>}
+                </div>
               </div>
-              <div className="flex gap-3 text-sm">
+              <div className="flex gap-3 text-sm shrink-0">
                 <button onClick={() => toggleVisible(speaker)} className="text-ink-800 underline">
                   {speaker.visible ? 'Hide' : 'Show'}
                 </button>

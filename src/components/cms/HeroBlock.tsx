@@ -6,21 +6,21 @@ import { useHeroOverlay } from '../../lib/heroOverlay'
 import RichText from '../RichText'
 import type { Hero, MediaAsset } from '../../types/models'
 
+// No year — redundant next to the symposium name/eyebrow, which already
+// carries it — and a plain hyphen with no surrounding spaces, per organiser
+// feedback 2026-08-12 ("16-17 September", not "16 – 17 September 2026").
 function formatDateRange(start?: string, end?: string): string | null {
   if (!start) return null
   const startDate = new Date(`${start}T00:00:00`)
   const endDate = end && end !== start ? new Date(`${end}T00:00:00`) : null
-  const longFmt: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }
+  const monthFmt: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' }
 
-  if (!endDate) return startDate.toLocaleDateString(undefined, longFmt)
+  if (!endDate) return startDate.toLocaleDateString(undefined, monthFmt)
 
   const sameMonth =
     startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear()
-  const startFmt = startDate.toLocaleDateString(
-    undefined,
-    sameMonth ? { day: 'numeric' } : { day: 'numeric', month: 'long' }
-  )
-  return `${startFmt} – ${endDate.toLocaleDateString(undefined, longFmt)}`
+  const startFmt = startDate.toLocaleDateString(undefined, sameMonth ? { day: 'numeric' } : monthFmt)
+  return `${startFmt}-${endDate.toLocaleDateString(undefined, monthFmt)}`
 }
 
 function CtaButton({ label, link, primary }: { label: string; link: string; primary: boolean }) {

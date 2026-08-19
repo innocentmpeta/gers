@@ -3,6 +3,7 @@ import MediaPicker from '../../components/cms/MediaPicker'
 import { RichTextHint } from '../../components/RichText'
 import { updateOwnProfile } from '../../lib/firestore/users'
 import { listCommunities, listUserOptIns, optIn, optOut } from '../../lib/firestore/communities'
+import { SALUTATIONS, SECTORS, GENDERS, AGE_GROUPS, DISABILITY_OPTIONS, FIELD_LABELS } from './profileFieldOptions'
 import type {
   AgeGroup,
   Disability,
@@ -19,11 +20,6 @@ const inputClass =
   'rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700'
 const labelClass = 'flex flex-col gap-1 text-sm text-slate-700'
 
-const SALUTATIONS: Salutation[] = ['Mr', 'Ms', 'Mrs', 'Dr', 'Prof', 'Other']
-const SECTORS: Sector[] = ['Academia', 'Research', 'Government', 'Enterprise', 'Civil Society', 'Other']
-const GENDERS: Gender[] = ['Female', 'Male', 'Prefer not to say']
-const AGE_GROUPS: AgeGroup[] = ['Under 35 years', '35 years and over']
-const DISABILITY_OPTIONS: Disability[] = ['Yes', 'No', 'Prefer not to say']
 const SDGS: Sdg[] = [
   'SDG 6: Clean Water and Sanitation',
   'SDG 7: Affordable and Clean Energy',
@@ -162,7 +158,7 @@ export default function AccountProfileEditor({
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className={labelClass}>
-          Title
+          {FIELD_LABELS.salutation}
           <select value={salutation} onChange={(e) => setSalutation(e.target.value as Salutation)} className={inputClass}>
             <option value="">—</option>
             {SALUTATIONS.map((s) => (
@@ -182,11 +178,11 @@ export default function AccountProfileEditor({
           <input required value={surname} onChange={(e) => setSurname(e.target.value)} className={inputClass} />
         </label>
         <label className={labelClass}>
-          Organisation
+          {FIELD_LABELS.organization}
           <input value={organization} onChange={(e) => setOrganization(e.target.value)} className={inputClass} />
         </label>
         <label className={labelClass}>
-          Job title / role
+          {FIELD_LABELS.jobTitle}
           <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className={inputClass} />
         </label>
         <label className={labelClass}>
@@ -223,7 +219,7 @@ export default function AccountProfileEditor({
           </select>
         </label>
         <label className={labelClass}>
-          Disability
+          {FIELD_LABELS.disability}
           <select value={disability} onChange={(e) => setDisability(e.target.value as Disability)} className={inputClass}>
             <option value="">—</option>
             {DISABILITY_OPTIONS.map((d) => (
@@ -234,7 +230,7 @@ export default function AccountProfileEditor({
           </select>
         </label>
         <label className={labelClass}>
-          WhatsApp number
+          {FIELD_LABELS.whatsapp}
           <input value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} className={inputClass} />
         </label>
       </div>
@@ -299,7 +295,7 @@ export default function AccountProfileEditor({
         <div className="mt-6 flex flex-col gap-2">
           <label className="inline-flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={showInDirectory} onChange={(e) => setShowInDirectory(e.target.checked)} />
-            Include me in the community of practice directory
+            {FIELD_LABELS.directoryCheckbox}
           </label>
           {showInDirectory && (
             <div className="ml-6 flex flex-col gap-2">

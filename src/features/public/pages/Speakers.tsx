@@ -4,17 +4,37 @@ import RichText from '../../../components/RichText'
 import { usePageHero } from '../cms/usePageHero'
 import { listVisibleSpeakers } from '../../../lib/firestore/speakers'
 import { getMediaAsset } from '../../../lib/firestore/media'
-import type { MediaAsset, Speaker } from '../../../types/models'
+import type { MediaAsset, Speaker, SpeakerRole } from '../../../types/models'
 
-const ROLE_LABEL: Record<Speaker['role'], string> = {
-  presenter: 'Speaker',
-  facilitator: 'Facilitator',
+const GROUP_LABEL: Record<SpeakerRole, string> = {
+  presenter: 'Speakers',
+  facilitator: 'Facilitators',
+}
+const GROUP_ORDER: SpeakerRole[] = ['presenter', 'facilitator']
+
+function SpeakerCard({ speaker, photo }: { speaker: Speaker; photo?: MediaAsset }) {
+  return (
+    <div id={speaker.id} className="scroll-mt-32 overflow-hidden rounded-lg border border-sand-200 bg-white">
+      <div className="aspect-square bg-sand-100">
+        {photo && <img src={photo.fileUrl} alt={photo.altText} className="h-full w-full object-cover" />}
+      </div>
+      <div className="p-5">
+        <p className="text-lg text-ink-900">{speaker.name}</p>
+        {speaker.title && <p className="mt-1 text-sm text-gold-600">{speaker.title}</p>}
+        {speaker.bio && (
+          <p className="mt-2 text-sm text-slate-500">
+            <RichText text={speaker.bio} />
+          </p>
+        )}
+      </div>
+    </div>
+  )
 }
 
-// Presenters and facilitators show together on one "Experts" page — each
-// card is badged with its role rather than split into separate pages, per
-// the organisers' latest direction (reversing the earlier Speakers/
-// Facilitators split back to the original combined format).
+// Presenters and facilitators show together on one "Experts" page, grouped
+// into a Speakers section and a Facilitators section (each in the order set
+// from admin) rather than fully interleaved — per organiser feedback
+// 2026-08-12 asking for cards to be reorderable and grouped.
 export default function Speakers() {
   const { hero, loading: heroLoading } = usePageHero('speakers')
   const [speakers, setSpeakers] = useState<Speaker[]>([])
@@ -44,31 +64,21 @@ export default function Speakers() {
         {speakers.length === 0 ? (
           <p className="text-slate-500">Experts will be announced here soon.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {speakers.map((speaker) => {
-              const photo = speaker.photoMediaId ? photos[speaker.photoMediaId] : undefined
+          <div className="flex flex-col gap-14">
+            {GROUP_ORDER.map((role) => {
+              const group = speakers.filter((s) => s.role === role)
+              if (group.length === 0) return null
               return (
-                <div
-                  key={speaker.id}
-                  id={speaker.id}
-                  className="scroll-mt-32 overflow-hidden rounded-lg border border-sand-200 bg-white"
-                >
-                  <div className="aspect-square bg-sand-100">
-                    {photo && (
-                      <img src={photo.fileUrl} alt={photo.altText} className="h-full w-full object-cover" />
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <span className="text-xs uppercase tracking-wide text-gold-600">
-                      {ROLE_LABEL[speaker.role]}
-                    </span>
-                    <p className="mt-1 text-lg text-ink-900">{speaker.name}</p>
-                    {speaker.title && <p className="mt-1 text-sm text-gold-600">{speaker.title}</p>}
-                    {speaker.bio && (
-                      <p className="mt-2 text-sm text-slate-500">
-                        <RichText text={speaker.bio} />
-                      </p>
-                    )}
+                <div key={role}>
+                  <h2 className="text-2xl text-ink-900">{GROUP_LABEL[role]}</h2>
+                  <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {group.map((speaker) => (
+                      <SpeakerCard
+                        key={speaker.id}
+                        speaker={speaker}
+                        photo={speaker.photoMediaId ? photos[speaker.photoMediaId] : undefined}
+                      />
+                    ))}
                   </div>
                 </div>
               )

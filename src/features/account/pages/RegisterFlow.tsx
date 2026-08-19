@@ -4,13 +4,8 @@ import { useAuth } from '../../../lib/auth'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import { getRegistrationForUser, createDefaultRegistration } from '../../../lib/firestore/registrations'
 import type { NewUserProfileInput } from '../../../lib/firestore/users'
-import type { AgeGroup, Disability, Gender, Salutation, Sector, Symposium, VisibilityScope } from '../../../types/models'
-
-const SALUTATIONS: Salutation[] = ['Mr', 'Ms', 'Mrs', 'Dr', 'Prof', 'Other']
-const SECTORS: Sector[] = ['Academia', 'Research', 'Government', 'Enterprise', 'Civil Society', 'Other']
-const GENDERS: Gender[] = ['Female', 'Male', 'Prefer not to say']
-const AGE_GROUPS: AgeGroup[] = ['Under 35 years', '35 years and over']
-const DISABILITY_OPTIONS: Disability[] = ['Yes', 'No', 'Prefer not to say']
+import { SALUTATIONS, SECTORS, GENDERS, AGE_GROUPS, DISABILITY_OPTIONS, FIELD_LABELS } from '../profileFieldOptions'
+import type { Salutation, Gender, AgeGroup, Disability, Sector, Symposium, VisibilityScope } from '../../../types/models'
 
 const inputClass =
   'rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700'
@@ -228,7 +223,7 @@ function FullSignUpAndRegister({
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
         <div className="flex gap-4">
           <label className={labelClass + ' w-32 shrink-0'}>
-            Salutation
+            {FIELD_LABELS.salutation}
             <select value={salutation} onChange={(e) => setSalutation(e.target.value as Salutation)} className={inputClass}>
               <option value="">—</option>
               {SALUTATIONS.map((s) => (
@@ -249,11 +244,11 @@ function FullSignUpAndRegister({
         </div>
 
         <label className={labelClass}>
-          Organization
+          {FIELD_LABELS.organization}
           <input value={organization} onChange={(e) => setOrganization(e.target.value)} className={inputClass} />
         </label>
         <label className={labelClass}>
-          Job title / role
+          {FIELD_LABELS.jobTitle}
           <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className={inputClass} />
         </label>
 
@@ -294,7 +289,7 @@ function FullSignUpAndRegister({
         </div>
 
         <label className={labelClass}>
-          Do you consider yourself to be a person with a disability?
+          {FIELD_LABELS.disability}
           <select
             value={disability}
             onChange={(e) => setDisability(e.target.value as Disability)}
@@ -320,7 +315,7 @@ function FullSignUpAndRegister({
           />
         </label>
         <label className={labelClass}>
-          WhatsApp number
+          {FIELD_LABELS.whatsapp}
           <input value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} className={inputClass} />
         </label>
         <label className={labelClass}>
@@ -337,8 +332,7 @@ function FullSignUpAndRegister({
 
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={showInDirectory} onChange={(e) => setShowInDirectory(e.target.checked)} />
-          Include me in the Community of Practice directory (you can change this anytime from your
-          account)
+          {FIELD_LABELS.directoryCheckbox} (you can change this anytime from your account)
         </label>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
