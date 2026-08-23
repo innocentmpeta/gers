@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 import { getMediaAsset } from '../../lib/firestore/media'
 import { useHeroOverlay } from '../../lib/heroOverlay'
+import { getGoogleCalendarUrl, getIcsContent } from '../../lib/calendar'
 import RichText from '../RichText'
 import type { Hero, MediaAsset } from '../../types/models'
 
@@ -21,6 +22,38 @@ function formatDateRange(start?: string, end?: string): string | null {
     startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear()
   const startFmt = startDate.toLocaleDateString(undefined, sameMonth ? { day: 'numeric' } : monthFmt)
   return `${startFmt}-${endDate.toLocaleDateString(undefined, monthFmt)}`
+}
+
+// Both links are generated client-side from the hero's own dates — no
+// external calendar service or API involved. Google Calendar accepts a
+// plain URL; everything else (Outlook, Apple Calendar) opens a downloaded
+// .ics file, the universal format for "add this event."
+function AddToCalendar({ title, startDate, endDate }: { title: string; startDate: string; endDate?: string }) {
+  function downloadIcs() {
+    const blob = new Blob([getIcsContent(title, startDate, endDate)], { type: 'text/calendar' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${title.replace(/[^a-z0-9]+/gi, '-')}.ics`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="mt-2 flex gap-4 text-xs text-slate-300">
+      <a
+        href={getGoogleCalendarUrl(title, startDate, endDate)}
+        target="_blank"
+        rel="noreferrer"
+        className="underline hover:text-sand-50"
+      >
+        + Add to Google Calendar
+      </a>
+      <button type="button" onClick={downloadIcs} className="underline hover:text-sand-50">
+        + Add to Outlook/Apple Calendar
+      </button>
+    </div>
+  )
 }
 
 function CtaButton({ label, link, primary }: { label: string; link: string; primary: boolean }) {
@@ -103,6 +136,9 @@ export default function HeroBlock({ hero, size = 'compact' }: HeroBlockProps) {
           </p>
         )}
         {dateRange && <p className="mt-3 whitespace-nowrap text-xl font-medium text-gold-500">{dateRange}</p>}
+        {dateRange && hero.headline && hero.eventStartDate && (
+          <AddToCalendar title={hero.headline} startDate={hero.eventStartDate} endDate={hero.eventEndDate} />
+        )}
         {(hero.cta1Label || hero.cta2Label) && (
           <div className="mt-6 flex gap-3">
             {hero.cta1Label && hero.cta1Link && (

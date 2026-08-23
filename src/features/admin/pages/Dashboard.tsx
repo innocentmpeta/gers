@@ -61,7 +61,7 @@ export default function AdminDashboard() {
 
   const pendingApproval = registrations?.filter((r) => r.status === 'pending_approval').length ?? 0
   const approved = registrations?.filter((r) => r.status === 'approved').length ?? 0
-  const invitedInPerson = registrations?.filter((r) => r.participationRole === 'invited_participant').length ?? 0
+  const invitedInPerson = registrations?.filter((r) => r.attendanceMode === 'face_to_face').length ?? 0
   const pendingAbstracts = abstracts?.filter((a) => a.status === 'pending').length ?? 0
 
   const physicalConfirmed = symposium?.confirmedPhysicalCount ?? 0

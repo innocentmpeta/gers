@@ -99,7 +99,7 @@ function CapacityPanel({
   const [draft, setDraft] = useState<CapacityDraft>(toCapacityDraft(symposium))
   const [saving, setSaving] = useState(false)
 
-  const invitedCount = registrations.filter((r) => r.participationRole === 'invited_participant').length
+  const invitedCount = registrations.filter((r) => r.attendanceMode === 'face_to_face').length
   const approvedCount = registrations.filter((r) => r.status === 'approved').length
   const pendingCount = registrations.filter((r) => r.status === 'pending_approval').length
 
@@ -242,10 +242,6 @@ export default function AdminRegistrations() {
     load()
   }
 
-  // Excludes 'invited_participant' — that's only ever set via Invite in
-  // person above, which also resets attendance mode/confirmation correctly.
-  // This picker never touches those, so routing it through here instead
-  // would leave attendanceMode/confirmationStatus stale.
   async function handleChangeRole(id: string, role: Registration['participationRole']) {
     await updateRegistration(id, { participationRole: role })
     load()
@@ -379,23 +375,25 @@ export default function AdminRegistrations() {
                       </button>
                     </>
                   )}
-                  {r.status === 'approved' && r.participationRole === 'public_participant' && (
+                  {r.status === 'approved' && r.attendanceMode !== 'face_to_face' && (
                     <button onClick={() => handleInvite(r.id)} className="text-ink-800 underline">
                       Invite in person
                     </button>
                   )}
-                  {r.participationRole === 'invited_participant' && (
+                  {r.attendanceMode === 'face_to_face' && (
                     <button onClick={() => handleUninvite(r.id)} className="text-red-600 underline">
                       Revoke invitation
                     </button>
                   )}
-                  {r.status === 'approved' && r.participationRole !== 'invited_participant' && (
+                  {r.status === 'approved' && (
                     <select
                       value={r.participationRole}
                       onChange={(e) => handleChangeRole(r.id, e.target.value as Registration['participationRole'])}
                       className="rounded-md border border-sand-200 px-2 py-1 text-xs"
                     >
-                      {(['public_participant', 'exhibitor', 'facilitator', 'presenter', 'vip'] as const).map((role) => (
+                      {(
+                        ['public_participant', 'invited_participant', 'exhibitor', 'facilitator', 'presenter', 'vip'] as const
+                      ).map((role) => (
                         <option key={role} value={role}>
                           {ROLE_LABEL[role]}
                         </option>

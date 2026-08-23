@@ -79,7 +79,10 @@ const EMPTY: Draft = {
   whatsappNumber: '',
   systemRole: '',
   registerAsAttendee: false,
-  participationRole: 'vip',
+  // Per project-docs meeting notes 2026-08-21: someone invited to register
+  // through this page should default to Invited Participant, distinct from
+  // a self-registered Public Participant — admin can still change it.
+  participationRole: 'invited_participant',
   attendanceMode: 'online',
 }
 
@@ -88,6 +91,143 @@ function actionCodeSettingsFor(email: string) {
     url: `${window.location.origin}/invite/complete?email=${encodeURIComponent(email)}`,
     handleCodeInApp: true,
   }
+}
+
+const PARTICIPATION_ROLES = Object.keys(ROLE_LABEL) as ParticipationRole[]
+const CSV_COLUMNS = [
+  'email',
+  'name',
+  'surname',
+  'salutation',
+  'organization',
+  'jobTitle',
+  'sector',
+  'gender',
+  'ageGroup',
+  'whatsappNumber',
+  'systemRole',
+  'register',
+  'role',
+  'inviteInPerson',
+] as const
+
+// Hand-rolled rather than a library — handles quoted fields (with embedded
+// commas/newlines/escaped "") which is all a spreadsheet export needs.
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let field = ''
+  let inQuotes = false
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') {
+          field += '"'
+          i++
+        } else {
+          inQuotes = false
+        }
+      } else {
+        field += c
+      }
+    } else if (c === '"') {
+      inQuotes = true
+    } else if (c === ',') {
+      row.push(field)
+      field = ''
+    } else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++
+      row.push(field)
+      field = ''
+      if (row.some((cell) => cell !== '')) rows.push(row)
+      row = []
+    } else {
+      field += c
+    }
+  }
+  if (field !== '' || row.length > 0) {
+    row.push(field)
+    if (row.some((cell) => cell !== '')) rows.push(row)
+  }
+  return rows
+}
+
+function truthy(value: string | undefined): boolean {
+  const v = (value ?? '').trim().toLowerCase()
+  return v === 'yes' || v === 'y' || v === '1' || v === 'true'
+}
+
+type BulkRow = {
+  email: string
+  name: string
+  surname: string
+  salutation?: Salutation
+  organization?: string
+  jobTitle?: string
+  sector?: Sector
+  gender?: Gender
+  ageGroup?: AgeGroup
+  whatsappNumber?: string
+  systemRole?: Exclude<SystemRole, null>
+  register: boolean
+  role: ParticipationRole
+  inviteInPerson: boolean
+  errors: string[]
+}
+
+function parseBulkRows(text: string): BulkRow[] {
+  const table = parseCsv(text)
+  if (table.length === 0) return []
+  const header = table[0].map((h) => h.trim().toLowerCase())
+  const colIndex = new Map(CSV_COLUMNS.map((c) => [c.toLowerCase(), header.indexOf(c.toLowerCase())]))
+  const get = (cells: string[], col: (typeof CSV_COLUMNS)[number]) => {
+    const idx = colIndex.get(col.toLowerCase())
+    return idx == null || idx < 0 ? '' : (cells[idx] ?? '').trim()
+  }
+
+  return table.slice(1).map((cells) => {
+    const errors: string[] = []
+    const email = get(cells, 'email')
+    const name = get(cells, 'name')
+    const surname = get(cells, 'surname')
+    if (!email || !email.includes('@')) errors.push('missing/invalid email')
+    if (!name) errors.push('missing name')
+    if (!surname) errors.push('missing surname')
+
+    const salutation = get(cells, 'salutation') as Salutation | ''
+    if (salutation && !SALUTATIONS.includes(salutation)) errors.push(`unknown salutation "${salutation}"`)
+    const sector = get(cells, 'sector') as Sector | ''
+    if (sector && !SECTORS.includes(sector)) errors.push(`unknown sector "${sector}"`)
+    const gender = get(cells, 'gender') as Gender | ''
+    if (gender && !GENDERS.includes(gender)) errors.push(`unknown gender "${gender}"`)
+    const ageGroup = get(cells, 'ageGroup') as AgeGroup | ''
+    if (ageGroup && !AGE_GROUPS.includes(ageGroup)) errors.push(`unknown age group "${ageGroup}"`)
+    const systemRoleRaw = get(cells, 'systemRole')
+    const systemRole = systemRoleRaw as Exclude<SystemRole, null> | ''
+    if (systemRole && !SYSTEM_ROLES.includes(systemRole)) errors.push(`unknown system role "${systemRoleRaw}"`)
+    const roleRaw = get(cells, 'role')
+    const role = (roleRaw || 'invited_participant') as ParticipationRole
+    if (!PARTICIPATION_ROLES.includes(role)) errors.push(`unknown role "${roleRaw}"`)
+
+    return {
+      email,
+      name,
+      surname,
+      salutation: salutation || undefined,
+      organization: get(cells, 'organization') || undefined,
+      jobTitle: get(cells, 'jobTitle') || undefined,
+      sector: sector || undefined,
+      gender: gender || undefined,
+      ageGroup: ageGroup || undefined,
+      whatsappNumber: get(cells, 'whatsappNumber') || undefined,
+      systemRole: systemRole || undefined,
+      register: truthy(get(cells, 'register')),
+      role,
+      inviteInPerson: truthy(get(cells, 'inviteInPerson')),
+      errors,
+    }
+  })
 }
 
 function mapError(err: unknown): string {
@@ -125,6 +265,11 @@ export default function AdminAccounts() {
   const [registrationsByUser, setRegistrationsByUser] = useState<Map<string, Registration>>(new Map())
   const [attendanceBusyId, setAttendanceBusyId] = useState<string | null>(null)
   const [userSearch, setUserSearch] = useState('')
+
+  const [bulkRows, setBulkRows] = useState<BulkRow[]>([])
+  const [bulkFileName, setBulkFileName] = useState<string | null>(null)
+  const [bulkSubmitting, setBulkSubmitting] = useState(false)
+  const [bulkResults, setBulkResults] = useState<Map<number, 'sent' | string>>(new Map())
 
   async function load() {
     const [inv, allUsers, sym, regs] = await Promise.all([
@@ -191,6 +336,52 @@ export default function AdminAccounts() {
     } finally {
       setResendingId(null)
     }
+  }
+
+  async function handleBulkFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const text = await file.text()
+    setBulkFileName(file.name)
+    setBulkRows(parseBulkRows(text))
+    setBulkResults(new Map())
+  }
+
+  async function handleBulkSubmit() {
+    if (!profile) return
+    setBulkSubmitting(true)
+    const results = new Map<number, 'sent' | string>()
+    for (let i = 0; i < bulkRows.length; i++) {
+      const row = bulkRows[i]
+      if (row.errors.length > 0) continue
+      try {
+        await createInvite({
+          email: row.email,
+          salutation: row.salutation,
+          name: row.name,
+          surname: row.surname,
+          organization: row.organization,
+          jobTitle: row.jobTitle,
+          sector: row.sector,
+          gender: row.gender,
+          ageGroup: row.ageGroup,
+          whatsappNumber: row.whatsappNumber,
+          systemRole: row.systemRole,
+          registerAsAttendee: row.register,
+          participationRole: row.register ? row.role : undefined,
+          attendanceMode: row.register ? (row.inviteInPerson ? 'face_to_face' : 'online') : undefined,
+          invitedBy: profile.id,
+        })
+        await sendSignInLinkToEmail(auth, row.email, actionCodeSettingsFor(row.email))
+        results.set(i, 'sent')
+      } catch (err) {
+        results.set(i, mapError(err))
+      }
+      setBulkResults(new Map(results))
+    }
+    setBulkSubmitting(false)
+    await load()
   }
 
   async function handleRoleChange(user: User, role: SystemRole) {
@@ -400,7 +591,7 @@ export default function AdminAccounts() {
                   className="rounded-md border border-sand-200 px-3 py-2"
                 >
                   <option value="online">Online</option>
-                  <option value="face_to_face">Face to face</option>
+                  <option value="face_to_face">Face to face (also invite them to attend in person)</option>
                 </select>
               </label>
             </div>
@@ -424,6 +615,78 @@ export default function AdminAccounts() {
           {sending ? 'Sending…' : 'Send invite'}
         </button>
       </form>
+
+      <div className="mt-10 rounded-lg border border-sand-200 bg-white p-5">
+        <h2 className="text-lg font-semibold text-ink-900">Bulk invite via spreadsheet</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Upload a CSV with columns: {CSV_COLUMNS.join(', ')}. <code>register</code> and{' '}
+          <code>inviteInPerson</code> accept yes/no or 1/0. <code>role</code> defaults to "Invited
+          participant" when left blank.
+        </p>
+        <input
+          type="file"
+          accept=".csv,text/csv"
+          onChange={handleBulkFile}
+          className="mt-3 text-sm"
+        />
+        {bulkFileName && bulkRows.length > 0 && (
+          <>
+            <p className="mt-3 text-sm text-slate-600">
+              {bulkFileName} — {bulkRows.length} row{bulkRows.length === 1 ? '' : 's'},{' '}
+              {bulkRows.filter((r) => r.errors.length === 0).length} valid
+            </p>
+            <div className="mt-2 max-h-80 overflow-auto rounded-md border border-sand-200">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-sand-50 text-xs uppercase text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2">Email</th>
+                    <th className="px-3 py-2">Name</th>
+                    <th className="px-3 py-2">Register</th>
+                    <th className="px-3 py-2">Role</th>
+                    <th className="px-3 py-2">In person</th>
+                    <th className="px-3 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-sand-100">
+                  {bulkRows.map((row, i) => {
+                    const result = bulkResults.get(i)
+                    return (
+                      <tr key={i} className={row.errors.length > 0 ? 'bg-red-50' : undefined}>
+                        <td className="px-3 py-2">{row.email || '—'}</td>
+                        <td className="px-3 py-2">
+                          {row.name} {row.surname}
+                        </td>
+                        <td className="px-3 py-2">{row.register ? 'Yes' : 'No'}</td>
+                        <td className="px-3 py-2">{row.register ? ROLE_LABEL[row.role] : '—'}</td>
+                        <td className="px-3 py-2">{row.inviteInPerson ? 'Yes' : 'No'}</td>
+                        <td className="px-3 py-2">
+                          {row.errors.length > 0 ? (
+                            <span className="text-red-600">{row.errors.join('; ')}</span>
+                          ) : result === 'sent' ? (
+                            <span className="text-green-600">Sent</span>
+                          ) : result ? (
+                            <span className="text-red-600">{result}</span>
+                          ) : (
+                            <span className="text-slate-400">Ready</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <button
+              type="button"
+              onClick={handleBulkSubmit}
+              disabled={bulkSubmitting || bulkRows.every((r) => r.errors.length > 0)}
+              className="mt-3 self-start rounded-full bg-ink-800 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
+            >
+              {bulkSubmitting ? 'Sending invites…' : `Send ${bulkRows.filter((r) => r.errors.length === 0).length} invites`}
+            </button>
+          </>
+        )}
+      </div>
 
       <h2 className="mt-10 text-lg font-semibold text-ink-900">Invites</h2>
       <div className="mt-3 flex flex-col divide-y divide-sand-200 rounded-lg border border-sand-200 bg-white">

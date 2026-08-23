@@ -227,8 +227,6 @@ export default function AccountHome() {
               <dd>{STATUS_LABEL[registration.status]}</dd>
               <dt className="text-slate-500">Role</dt>
               <dd>{ROLE_LABEL[registration.participationRole]}</dd>
-              <dt className="text-slate-500">Attendance</dt>
-              <dd>{MODE_LABEL[registration.attendanceMode]}</dd>
               {isInvited && registration.confirmationStatus === 'confirmed' && (
                 <>
                   <dt className="text-slate-500">Confirmed</dt>

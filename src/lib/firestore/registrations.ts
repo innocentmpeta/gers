@@ -453,9 +453,13 @@ async function expireStaleOffersAndPromote(symposiumId: string): Promise<void> {
 
 // Resets confirmationStatus to 'unconfirmed' so the existing confirm +
 // meal-preference flow applies — inviting never claims a seat by itself.
+// Deliberately never touches participationRole — "invited to attend in
+// person" is an attendance decision, orthogonal to who someone IS (public
+// participant, invited participant, presenter, facilitator...). Conflating
+// the two here used to silently overwrite a presenter's role, for instance
+// — see project-docs meeting notes 2026-08-21.
 export async function inviteToAttendInPerson(registrationId: string): Promise<void> {
   await updateRegistration(registrationId, {
-    participationRole: 'invited_participant',
     attendanceMode: 'face_to_face',
     confirmationStatus: 'unconfirmed',
     waitlistedAt: deleteField(),
@@ -464,10 +468,11 @@ export async function inviteToAttendInPerson(registrationId: string): Promise<vo
   })
 }
 
-// Reverts to a standard online public participant. Releases whatever seat
-// they were holding (confirmed or provisionally offered) first, if any —
-// call promoteNextWaitlisted('face_to_face') afterward if this returns true,
-// since a real slot may have just freed up.
+// Reverts attendance to online. Releases whatever seat they were holding
+// (confirmed or provisionally offered) first, if any — call
+// promoteNextWaitlisted('face_to_face') afterward if this returns true,
+// since a real slot may have just freed up. Leaves participationRole
+// exactly as it was — revoking an in-person invite is not a role change.
 export async function uninviteFromInPerson(registrationId: string, symposiumId: string): Promise<boolean> {
   return runTransaction(db, async (tx) => {
     const { registration, symposium } = await loadPair(tx, registrationId, symposiumId)
@@ -478,7 +483,6 @@ export async function uninviteFromInPerson(registrationId: string, symposiumId: 
     tx.update(
       regRef(registrationId),
       omitUndefined({
-        participationRole: 'public_participant',
         attendanceMode: 'online',
         confirmationStatus: 'confirmed',
         confirmedAt: now,
