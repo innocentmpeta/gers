@@ -23,6 +23,7 @@ import RegisterFlow from './features/account/pages/RegisterFlow'
 import AbstractSubmissionForm from './features/account/pages/AbstractSubmissionForm'
 import InviteComplete from './features/account/pages/InviteComplete'
 import Login from './features/auth/pages/Login'
+import ForgotPassword from './features/auth/pages/ForgotPassword'
 import ItemDetailPage from './features/public/cms/ItemDetailPage'
 
 import AdminDashboard from './features/admin/pages/Dashboard'
@@ -65,6 +66,7 @@ function App() {
             <Route path="register" element={<Navigate to="/register/apply" replace />} />
             <Route path="register/apply" element={<RegisterFlow />} />
             <Route path="login" element={<Login />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="signup" element={<Navigate to="/register/apply" replace />} />
             <Route path="invite/complete" element={<InviteComplete />} />
             {/* Old top-level paths from before the nav restructure — kept as

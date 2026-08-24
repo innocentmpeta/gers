@@ -51,6 +51,9 @@ export default function Login() {
             className="rounded-md border border-sand-200 bg-white px-3 py-2 text-ink-950 outline-none focus:border-ink-700"
           />
         </label>
+        <Link to="/forgot-password" className="self-end text-sm text-ink-800 underline">
+          Forgot password?
+        </Link>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
