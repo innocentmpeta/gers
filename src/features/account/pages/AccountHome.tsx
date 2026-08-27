@@ -10,6 +10,7 @@ import {
   withdrawRegistration,
 } from '../../../lib/firestore/registrations'
 import { listUserAbstractSubmissions } from '../../../lib/firestore/abstractSubmissions'
+import { syncSpeakerFromProfile } from '../../../lib/firestore/speakers'
 import OrganizationEditor from '../OrganizationEditor'
 import AccountProfileEditor from '../AccountProfileEditor'
 import ChangePasswordCard from '../../../components/ChangePasswordCard'
@@ -146,16 +147,40 @@ export default function AccountHome() {
     }
   }
 
+  // Presenters/facilitators get their public Speakers card auto-created/
+  // updated from their own account profile the moment their seat is
+  // actually confirmed — so the bio/photo/organization they already
+  // entered in "My Profile" doesn't have to be re-typed by an admin. Only
+  // fires for those two roles; a confirmed public/invited participant has
+  // no Speaker card to sync.
+  async function maybeSyncSpeakerProfile() {
+    if (!firebaseUser || !profile || !registration) return
+    if (registration.participationRole !== 'presenter' && registration.participationRole !== 'facilitator') return
+    await syncSpeakerFromProfile(firebaseUser.uid, registration.participationRole, {
+      name: profile.name,
+      surname: profile.surname,
+      organization: profile.organization,
+      jobTitle: profile.jobTitle,
+      bio: profile.bio,
+      photoMediaId: profile.photoMediaId,
+      linkedinUrl: profile.linkedinUrl,
+      areasOfInterest: profile.areasOfInterest,
+      sdgs: profile.sdgs,
+    })
+  }
+
   const handleConfirm = () =>
     runAction(async () => {
       if (!registration || !symposium) return
-      await attemptConfirm(registration.id, symposium.id, mealPreference, attendanceDays)
+      const status = await attemptConfirm(registration.id, symposium.id, mealPreference, attendanceDays)
+      if (status === 'confirmed') await maybeSyncSpeakerProfile()
     })
 
   const handleAccept = () =>
     runAction(async () => {
       if (!registration || !symposium) return
       await acceptOffer(registration.id, symposium.id)
+      await maybeSyncSpeakerProfile()
     })
 
   const handleDecline = () =>
@@ -368,10 +393,6 @@ export default function AccountHome() {
 
             {registration.status === 'approved' && !isInvited && (
               <div>
-                <p className="text-sm text-slate-500">
-                  You're registered to join online. We'll be in touch with the session link
-                  closer to the event.
-                </p>
                 <button
                   onClick={handleWithdraw}
                   disabled={actionPending}

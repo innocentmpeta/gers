@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore'
 import { db } from '../firebase'
-import { listWhere, updateDocById, omitUndefined, where } from './crud'
+import { listWhere, updateDocById, removeDoc, omitUndefined, where } from './crud'
 import type { SystemRole, User } from '../../types/models'
 
 const usersCol = 'users'
@@ -134,4 +134,16 @@ export async function updateOwnEmail(uid: string, email: string): Promise<void> 
 // this project's scale that a plain filtered list is fine, no pagination.
 export async function listDirectoryUsers(): Promise<User[]> {
   return listWhere<User>(usersCol, [where('showInDirectory', '==', true)])
+}
+
+// Super-admin-only (relies on the `canAccounts` delete rule). Removes only
+// the Firestore profile doc — the underlying Firebase Auth account is NOT
+// deleted, since the client SDK can only ever delete the currently
+// signed-in user's own auth account, never an arbitrary other one (that
+// needs the Admin SDK from a trusted backend, which this project doesn't
+// have). A "deleted" test account can therefore still technically sign in
+// again, which would recreate its profile doc — acceptable for cleaning up
+// test data, but callers should not present this as a full account wipe.
+export async function deleteUserProfile(uid: string): Promise<void> {
+  await removeDoc(usersCol, uid)
 }

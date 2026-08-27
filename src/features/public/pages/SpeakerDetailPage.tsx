@@ -79,7 +79,16 @@ export default function SpeakerDetailPage() {
         <div>
           <span className="text-xs uppercase tracking-wide text-gold-600">{ROLE_LABEL[speaker.role]}</span>
           <h1 className="mt-1 text-4xl">{speaker.name}</h1>
-          {speaker.title && <p className="mt-1 text-lg text-slate-500">{speaker.title}</p>}
+          {(speaker.title || speaker.organization) && (
+            <p className="mt-1 text-lg text-slate-500">
+              {[speaker.title, speaker.organization].filter(Boolean).join(', ')}
+            </p>
+          )}
+          {speaker.linkedinUrl && (
+            <a href={speaker.linkedinUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-sm text-ink-800 underline">
+              LinkedIn / socials
+            </a>
+          )}
         </div>
       </div>
 
@@ -87,6 +96,22 @@ export default function SpeakerDetailPage() {
         <p className="mt-8 text-slate-700">
           <RichText text={speaker.bio} />
         </p>
+      )}
+
+      {speaker.areasOfInterest && (
+        <p className="mt-4 text-sm text-slate-500">
+          <span className="font-medium text-slate-700">Areas of interest:</span> {speaker.areasOfInterest}
+        </p>
+      )}
+
+      {speaker.sdgs && speaker.sdgs.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {speaker.sdgs.map((sdg) => (
+            <span key={sdg} className="rounded-full bg-sand-100 px-3 py-1 text-xs text-ink-800">
+              {sdg}
+            </span>
+          ))}
+        </div>
       )}
 
       {session && (

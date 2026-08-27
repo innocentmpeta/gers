@@ -1,4 +1,4 @@
-import { where, orderBy, listWhere, createDoc, updateDocById } from './crud'
+import { where, orderBy, listWhere, createDoc, updateDocById, removeDoc } from './crud'
 import type { Invite } from '../../types/models'
 
 const col = 'invites'
@@ -27,4 +27,8 @@ export async function getPendingInviteByEmail(email: string): Promise<Invite | n
 
 export async function markInviteConsumed(id: string): Promise<void> {
   await updateDocById(col, id, { status: 'consumed', consumedAt: new Date().toISOString() })
+}
+
+export async function deleteInvite(id: string): Promise<void> {
+  await removeDoc(col, id)
 }

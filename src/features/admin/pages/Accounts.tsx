@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { sendSignInLinkToEmail } from 'firebase/auth'
 import { auth } from '../../../lib/firebase'
-import { createInvite, listInvites } from '../../../lib/firestore/invites'
-import { listAllUsers, setUserSystemRole } from '../../../lib/firestore/users'
-import { listRegistrations, adminCreateAttendeeRegistration } from '../../../lib/firestore/registrations'
+import { createInvite, listInvites, deleteInvite } from '../../../lib/firestore/invites'
+import { listAllUsers, setUserSystemRole, deleteUserProfile } from '../../../lib/firestore/users'
+import { listRegistrations, adminCreateAttendeeRegistration, deleteRegistration } from '../../../lib/firestore/registrations'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import { useAuth } from '../../../lib/auth'
 import type {
@@ -264,6 +264,7 @@ export default function AdminAccounts() {
   const [symposium, setSymposium] = useState<Symposium | null>(null)
   const [registrationsByUser, setRegistrationsByUser] = useState<Map<string, Registration>>(new Map())
   const [attendanceBusyId, setAttendanceBusyId] = useState<string | null>(null)
+  const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null)
   const [userSearch, setUserSearch] = useState('')
 
   const [bulkRows, setBulkRows] = useState<BulkRow[]>([])
@@ -402,6 +403,34 @@ export default function AdminAccounts() {
       await load()
     } finally {
       setAttendanceBusyId(null)
+    }
+  }
+
+  // Deletes the Firestore profile, any registration, and any invite doc —
+  // but NOT the underlying Firebase Auth account, which the client SDK
+  // can't do for another user (needs the Admin SDK / a backend, which this
+  // project doesn't have). For cleaning up test accounts: good enough to
+  // remove them from every list in the app, though the email technically
+  // could still sign back in and get a fresh (empty) profile.
+  async function handleDeleteAccount(user: User) {
+    if (
+      !confirm(
+        `Delete ${user.name} ${user.surname}'s account data (profile, registration, invite)? This can't be undone. Note: their Firebase Auth login itself isn't deleted — only the Firestore data.`
+      )
+    )
+      return
+    setDeleteBusyId(user.id)
+    try {
+      const registration = registrationsByUser.get(user.id)
+      const invite = invites.find((i) => i.email === user.email)
+      await Promise.all([
+        registration ? deleteRegistration(registration.id) : Promise.resolve(),
+        invite ? deleteInvite(invite.id) : Promise.resolve(),
+        deleteUserProfile(user.id),
+      ])
+      await load()
+    } finally {
+      setDeleteBusyId(null)
     }
   }
 
@@ -770,6 +799,14 @@ export default function AdminAccounts() {
                     {attendanceBusyId === user.id ? 'Working…' : 'Register for attendance'}
                   </button>
                 )}
+                <button
+                  onClick={() => handleDeleteAccount(user)}
+                  disabled={deleteBusyId === user.id}
+                  title="Deletes profile/registration/invite data only — not the Firebase Auth login"
+                  className="whitespace-nowrap text-red-600 underline disabled:opacity-60"
+                >
+                  {deleteBusyId === user.id ? 'Deleting…' : 'Delete'}
+                </button>
               </div>
             </div>
           )

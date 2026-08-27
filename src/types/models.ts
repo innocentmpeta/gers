@@ -435,14 +435,22 @@ export interface Speaker {
   // Set when the presenter/facilitator submitted this themselves from their
   // account (project-docs meeting notes 2026-07-31: presenters can submit
   // their own bio/image/presentation); admin-added historical speakers may
-  // omit it.
+  // omit it. Also the join key syncSpeakerFromProfile (speakers.ts) uses to
+  // auto-populate these fields from the same person's My Profile once their
+  // attendance is confirmed, instead of them being entered twice.
   userId?: string
   role: SpeakerRole
   name: string
+  // Job title / affiliation — free text, admin's choice of phrasing when
+  // hand-authored, or the account's jobTitle when synced from a profile.
   title?: string
+  organization?: string
   bio?: string
   photoMediaId?: string
   presentationMediaId?: string
+  linkedinUrl?: string
+  areasOfInterest?: string
+  sdgs?: Sdg[]
   sessionId?: string
   order: number
   visible: boolean

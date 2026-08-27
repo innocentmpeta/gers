@@ -23,12 +23,22 @@ const EMPTY_DRAFT: SessionDraft = {
   joinLink: '',
 }
 
+// startTime/endTime are stored as UTC ISO strings. A <input type="datetime-local">
+// interprets its value as local time, so this must convert to local time
+// components rather than slicing the raw UTC string — otherwise every edit
+// shows (and re-saves) a time shifted by the local UTC offset (-2h in SA).
+function toLocalDatetimeInput(isoString: string): string {
+  const d = new Date(isoString)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 function toDraft(session: Session): SessionDraft {
   return {
     title: session.title,
     description: session.description ?? '',
-    startTime: session.startTime.slice(0, 16),
-    endTime: session.endTime.slice(0, 16),
+    startTime: toLocalDatetimeInput(session.startTime),
+    endTime: toLocalDatetimeInput(session.endTime),
     roomOrTrack: session.roomOrTrack ?? '',
     joinLink: session.joinLink ?? '',
   }

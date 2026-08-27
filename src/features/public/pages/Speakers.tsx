@@ -28,7 +28,11 @@ function SpeakerCard({ speaker, photo }: { speaker: Speaker; photo?: MediaAsset 
       </div>
       <div className="flex flex-1 flex-col p-5">
         <p className="text-lg text-ink-900 group-hover:underline">{speaker.name}</p>
-        {speaker.title && <p className="mt-1 text-sm text-gold-600">{speaker.title}</p>}
+        {(speaker.title || speaker.organization) && (
+          <p className="mt-1 text-sm text-gold-600">
+            {[speaker.title, speaker.organization].filter(Boolean).join(', ')}
+          </p>
+        )}
         {speaker.bio && (
           <p className="mt-2 line-clamp-3 text-sm text-slate-500">
             <RichText text={speaker.bio} />

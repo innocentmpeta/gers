@@ -1,6 +1,6 @@
 import { doc, runTransaction, deleteField, type FieldValue, type Transaction } from 'firebase/firestore'
 import { db } from '../firebase'
-import { where, orderBy, listWhere, createDoc, updateDocById, omitUndefined } from './crud'
+import { where, orderBy, listWhere, createDoc, updateDocById, removeDoc, omitUndefined } from './crud'
 import type {
   AttendanceDayChoice,
   AttendanceMode,
@@ -127,6 +127,14 @@ export async function rejectRegistration(id: string, approvedBy: string): Promis
 // happens here, not from Accounts & Roles — see AdminAccounts.tsx
 // handleRegisterAttendance, which is create-only (project-docs meeting
 // notes 2026-08-11: one place attendees leave from, not two).
+// Super-admin-only (relies on the `isSuperAdmin` delete rule) — hard-deletes
+// the doc entirely, unlike withdrawRegistration's status flip. For clearing
+// out test registrations, not for a real attendee's own withdrawal (that
+// should still go through withdrawRegistration so the record is kept).
+export async function deleteRegistration(id: string): Promise<void> {
+  await removeDoc(col, id)
+}
+
 export async function withdrawRegistration(id: string): Promise<void> {
   await updateRegistration(id, { status: 'withdrawn' })
 }

@@ -3,15 +3,33 @@ import MediaPicker from '../../../components/cms/MediaPicker'
 import { RichTextHint } from '../../../components/RichText'
 import { listSpeakers, createSpeaker, updateSpeaker, deleteSpeaker } from '../../../lib/firestore/speakers'
 import { listSessions } from '../../../lib/firestore/sessions'
-import type { MediaAsset, Session, Speaker, SpeakerRole } from '../../../types/models'
+import type { MediaAsset, Sdg, Session, Speaker, SpeakerRole } from '../../../types/models'
+
+// Same fixed SDG set AccountProfileEditor offers on "My Profile" — kept as
+// its own local list there rather than a shared constants module, matching
+// this project's existing convention (see also ROLE_LABEL-style consts).
+const SDGS: Sdg[] = [
+  'SDG 6: Clean Water and Sanitation',
+  'SDG 7: Affordable and Clean Energy',
+  'SDG 11: Sustainable Cities and Communities',
+  'SDG 12: Responsible Consumption and Production',
+  'SDG 13: Climate Action',
+  'SDG 14: Life Below Water',
+  'SDG 15: Life on Land',
+  'SDG 17: Partnerships for the Goals',
+]
 
 type Draft = {
   role: SpeakerRole
   name: string
   title: string
+  organization: string
   bio: string
   photoMediaId?: string
   presentationMediaId?: string
+  linkedinUrl: string
+  areasOfInterest: string
+  sdgs: Sdg[]
   sessionId: string
 }
 
@@ -19,9 +37,13 @@ const EMPTY: Draft = {
   role: 'presenter',
   name: '',
   title: '',
+  organization: '',
   bio: '',
   photoMediaId: undefined,
   presentationMediaId: undefined,
+  linkedinUrl: '',
+  areasOfInterest: '',
+  sdgs: [],
   sessionId: '',
 }
 
@@ -30,9 +52,13 @@ function toDraft(speaker: Speaker): Draft {
     role: speaker.role,
     name: speaker.name,
     title: speaker.title ?? '',
+    organization: speaker.organization ?? '',
     bio: speaker.bio ?? '',
     photoMediaId: speaker.photoMediaId,
     presentationMediaId: speaker.presentationMediaId,
+    linkedinUrl: speaker.linkedinUrl ?? '',
+    areasOfInterest: speaker.areasOfInterest ?? '',
+    sdgs: speaker.sdgs ?? [],
     sessionId: speaker.sessionId ?? '',
   }
 }
@@ -85,9 +111,13 @@ export default function AdminSpeakers() {
         role: draft.role,
         name: draft.name,
         title: draft.title || undefined,
+        organization: draft.organization || undefined,
         bio: draft.bio || undefined,
         photoMediaId: photo?.id ?? draft.photoMediaId,
         presentationMediaId: presentation?.id ?? draft.presentationMediaId,
+        linkedinUrl: draft.linkedinUrl || undefined,
+        areasOfInterest: draft.areasOfInterest || undefined,
+        sdgs: draft.sdgs.length ? draft.sdgs : undefined,
         sessionId: draft.sessionId || undefined,
       }
       if (editingId) {
@@ -172,7 +202,11 @@ export default function AdminSpeakers() {
                       ({speaker.role === 'facilitator' ? 'Facilitator' : 'Presenter'})
                     </span>
                   </p>
-                  {speaker.title && <p className="text-sm text-slate-500">{speaker.title}</p>}
+                  {(speaker.title || speaker.organization) && (
+                    <p className="text-sm text-slate-500">
+                      {[speaker.title, speaker.organization].filter(Boolean).join(', ')}
+                    </p>
+                  )}
                   {!speaker.visible && speaker.userId && (
                     <p className="text-xs text-gold-600">Self-submitted — pending review</p>
                   )}
@@ -269,10 +303,18 @@ function SpeakerForm({
         />
       </label>
       <label className="flex flex-col gap-1 text-sm text-slate-700">
-        Title / affiliation
+        Job title / affiliation
         <input
           value={draft.title}
           onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+          className="rounded-md border border-sand-200 px-3 py-2"
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm text-slate-700">
+        Organization
+        <input
+          value={draft.organization}
+          onChange={(e) => setDraft({ ...draft, organization: e.target.value })}
           className="rounded-md border border-sand-200 px-3 py-2"
         />
       </label>
@@ -298,6 +340,43 @@ function SpeakerForm({
         selectedAssetId={presentation?.id ?? draft.presentationMediaId}
         onSelect={setPresentation}
       />
+      <label className="flex flex-col gap-1 text-sm text-slate-700">
+        LinkedIn / socials
+        <input
+          value={draft.linkedinUrl}
+          onChange={(e) => setDraft({ ...draft, linkedinUrl: e.target.value })}
+          className="rounded-md border border-sand-200 px-3 py-2"
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm text-slate-700">
+        Areas of interest
+        <input
+          value={draft.areasOfInterest}
+          onChange={(e) => setDraft({ ...draft, areasOfInterest: e.target.value })}
+          className="rounded-md border border-sand-200 px-3 py-2"
+        />
+      </label>
+      <fieldset className="flex flex-col gap-1 text-sm text-slate-700">
+        <legend className="mb-1">Relevant SDGs</legend>
+        <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+          {SDGS.map((sdg) => (
+            <label key={sdg} className="flex items-start gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={draft.sdgs.includes(sdg)}
+                onChange={() =>
+                  setDraft({
+                    ...draft,
+                    sdgs: draft.sdgs.includes(sdg) ? draft.sdgs.filter((s) => s !== sdg) : [...draft.sdgs, sdg],
+                  })
+                }
+                className="mt-0.5"
+              />
+              {sdg}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <label className="flex flex-col gap-1 text-sm text-slate-700">
         Session (optional)
         <select

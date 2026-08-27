@@ -18,8 +18,13 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    // exists()-guarded so this evaluates cleanly (as "no role") instead of
+    // throwing during the brief window right after sign-in where a user's
+    // own users/{uid} doc hasn't been created yet (e.g. mid-InviteComplete)
+    // — a throw here surfaces to the client as a generic permission-denied
+    // on whatever unrelated read happened to trigger it.
     function role() {
-      return isSignedIn()
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.systemRole
         : null;
     }
@@ -304,7 +309,8 @@ service cloud.firestore {
         || (isSignedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.visible == false);
       allow update: if isAnyAdmin()
         || (isSignedIn() && resource.data.userId == request.auth.uid && onlyChangedKeys([
-              'role', 'name', 'title', 'bio', 'photoMediaId', 'presentationMediaId'
+              'role', 'name', 'title', 'organization', 'bio', 'photoMediaId', 'presentationMediaId',
+              'linkedinUrl', 'areasOfInterest', 'sdgs'
             ]));
       allow delete: if isAnyAdmin();
     }

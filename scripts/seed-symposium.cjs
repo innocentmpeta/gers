@@ -22,7 +22,7 @@ async function main() {
   await db.collection('symposia').add({
     year: 2026,
     name: 'GERS Symposium 2026',
-    startDate: '2026-09-15',
+    startDate: '2026-09-16',
     endDate: '2026-09-17',
     registrationDeadline: '2026-08-15',
     confirmationDeadline: '2026-09-01',

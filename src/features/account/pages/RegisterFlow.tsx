@@ -155,12 +155,6 @@ function QuickRegister({
       >
         {submitting ? 'Registering…' : 'Register now'}
       </button>
-      <p className="mt-6 text-sm text-slate-500">
-        Presenting instead?{' '}
-        <Link to="/register/abstract" className="text-ink-800 underline">
-          Submit an abstract
-        </Link>
-      </p>
     </div>
   )
 }
@@ -364,12 +358,6 @@ function FullSignUpAndRegister({
         Already have an account?{' '}
         <Link to="/login" className="text-ink-800 underline">
           Log in to register
-        </Link>
-      </p>
-      <p className="mt-2 text-sm text-slate-500">
-        Presenting instead?{' '}
-        <Link to="/register/abstract" className="text-ink-800 underline">
-          Submit an abstract
         </Link>
       </p>
     </div>
