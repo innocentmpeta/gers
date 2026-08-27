@@ -54,7 +54,7 @@ export default function Programme() {
             </h2>
             <div className="mt-4 flex flex-col divide-y divide-sand-200 rounded-lg border border-sand-200 bg-white">
               {daySessions.map((session) => {
-                const sessionSpeakers = speakers.filter((sp) => sp.sessionId === session.id)
+                const sessionSpeakers = speakers.filter((sp) => sp.sessionIds?.includes(session.id))
                 return (
                   <div
                     key={session.id}
@@ -86,6 +86,7 @@ export default function Programme() {
                               {i > 0 && ', '}
                               <Link to={`/symposium/speakers/${sp.id}`} className="text-gold-600 underline">
                                 {sp.name}
+                                {sp.organization && ` (${sp.organization})`}
                               </Link>
                             </span>
                           ))}

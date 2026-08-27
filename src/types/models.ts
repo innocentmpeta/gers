@@ -451,7 +451,10 @@ export interface Speaker {
   linkedinUrl?: string
   areasOfInterest?: string
   sdgs?: Sdg[]
-  sessionId?: string
+  // A speaker can chair/present in more than one session (a panel plus a
+  // workshop, for instance) — plural since 2026-08-27, was a single
+  // sessionId before that only let a speaker link to one session at a time.
+  sessionIds?: string[]
   order: number
   visible: boolean
 }

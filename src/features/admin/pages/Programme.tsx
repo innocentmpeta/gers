@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { RichTextHint } from '../../../components/RichText'
 import { listSessions, createSession, updateSession, deleteSession } from '../../../lib/firestore/sessions'
-import { listSpeakers, setSpeakerSession } from '../../../lib/firestore/speakers'
+import { listSpeakers, addSpeakerToSession, removeSpeakerFromSession } from '../../../lib/firestore/speakers'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import type { Session, Speaker, Symposium } from '../../../types/models'
 
@@ -66,7 +66,7 @@ export default function AdminProgramme() {
   }, [])
 
   function speakersFor(sessionId: string): Speaker[] {
-    return speakers.filter((sp) => sp.sessionId === sessionId)
+    return speakers.filter((sp) => sp.sessionIds?.includes(sessionId))
   }
 
   function startEdit(session: Session) {
@@ -109,8 +109,8 @@ export default function AdminProgramme() {
       const toLink = [...selectedSpeakerIds].filter((id) => !previouslyLinked.has(id))
       const toUnlink = [...previouslyLinked].filter((id) => !selectedSpeakerIds.has(id))
       await Promise.all([
-        ...toLink.map((id) => setSpeakerSession(id, sessionId)),
-        ...toUnlink.map((id) => setSpeakerSession(id, null)),
+        ...toLink.map((id) => addSpeakerToSession(id, sessionId)),
+        ...toUnlink.map((id) => removeSpeakerFromSession(id, sessionId)),
       ])
 
       cancel()
@@ -164,7 +164,7 @@ export default function AdminProgramme() {
                   {speakersFor(session.id).length > 0 && (
                     <p className="mt-1 text-sm text-slate-500">
                       {speakersFor(session.id)
-                        .map((sp) => sp.name)
+                        .map((sp) => (sp.organization ? `${sp.name} (${sp.organization})` : sp.name))
                         .join(', ')}
                     </p>
                   )}

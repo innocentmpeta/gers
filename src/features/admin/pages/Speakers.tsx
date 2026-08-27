@@ -30,7 +30,7 @@ type Draft = {
   linkedinUrl: string
   areasOfInterest: string
   sdgs: Sdg[]
-  sessionId: string
+  sessionIds: string[]
 }
 
 const EMPTY: Draft = {
@@ -44,7 +44,7 @@ const EMPTY: Draft = {
   linkedinUrl: '',
   areasOfInterest: '',
   sdgs: [],
-  sessionId: '',
+  sessionIds: [],
 }
 
 function toDraft(speaker: Speaker): Draft {
@@ -59,7 +59,7 @@ function toDraft(speaker: Speaker): Draft {
     linkedinUrl: speaker.linkedinUrl ?? '',
     areasOfInterest: speaker.areasOfInterest ?? '',
     sdgs: speaker.sdgs ?? [],
-    sessionId: speaker.sessionId ?? '',
+    sessionIds: speaker.sessionIds ?? [],
   }
 }
 
@@ -118,7 +118,7 @@ export default function AdminSpeakers() {
         linkedinUrl: draft.linkedinUrl || undefined,
         areasOfInterest: draft.areasOfInterest || undefined,
         sdgs: draft.sdgs.length ? draft.sdgs : undefined,
-        sessionId: draft.sessionId || undefined,
+        sessionIds: draft.sessionIds.length ? draft.sessionIds : undefined,
       }
       if (editingId) {
         await updateSpeaker(editingId, payload)
@@ -377,21 +377,32 @@ function SpeakerForm({
           ))}
         </div>
       </fieldset>
-      <label className="flex flex-col gap-1 text-sm text-slate-700">
-        Session (optional)
-        <select
-          value={draft.sessionId}
-          onChange={(e) => setDraft({ ...draft, sessionId: e.target.value })}
-          className="rounded-md border border-sand-200 px-3 py-2"
-        >
-          <option value="">None</option>
-          {sessions.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.title}
-            </option>
-          ))}
-        </select>
-      </label>
+      <fieldset className="flex flex-col gap-1 text-sm text-slate-700">
+        <legend className="mb-1">Sessions (optional — a speaker can be in more than one)</legend>
+        {sessions.length === 0 ? (
+          <p className="text-xs text-slate-400">No sessions yet.</p>
+        ) : (
+          <div className="flex flex-col gap-1 rounded-md border border-sand-200 p-3">
+            {sessions.map((s) => (
+              <label key={s.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={draft.sessionIds.includes(s.id)}
+                  onChange={() =>
+                    setDraft({
+                      ...draft,
+                      sessionIds: draft.sessionIds.includes(s.id)
+                        ? draft.sessionIds.filter((id) => id !== s.id)
+                        : [...draft.sessionIds, s.id],
+                    })
+                  }
+                />
+                {s.title}
+              </label>
+            ))}
+          </div>
+        )}
+      </fieldset>
       <div className="flex gap-3">
         <button
           onClick={onSave}

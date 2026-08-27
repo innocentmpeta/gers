@@ -1,4 +1,4 @@
-import { deleteField } from 'firebase/firestore'
+import { arrayUnion, arrayRemove } from 'firebase/firestore'
 import { where, orderBy, listWhere, getById, createDoc, updateDocById, removeDoc } from './crud'
 import type { Sdg, Speaker, SpeakerRole } from '../../types/models'
 
@@ -13,15 +13,20 @@ export async function getSpeaker(id: string): Promise<Speaker | null> {
 }
 
 export async function listSpeakersForSession(sessionId: string): Promise<Speaker[]> {
-  return listWhere<Speaker>(col, [where('sessionId', '==', sessionId), orderBy('order', 'asc')])
+  return listWhere<Speaker>(col, [where('sessionIds', 'array-contains', sessionId), orderBy('order', 'asc')])
 }
 
 // Admin-only — links/unlinks a speaker or facilitator to a Programme
-// session (many Speaker docs can point at the same session). Goes through
-// updateDocById directly rather than updateSpeaker so a genuine unlink can
-// use deleteField() — Partial<Speaker> can't express "clear this field".
-export async function setSpeakerSession(speakerId: string, sessionId: string | null): Promise<void> {
-  await updateDocById(col, speakerId, { sessionId: sessionId ?? deleteField() })
+// session. A speaker can be linked to more than one session at once (a
+// panel plus a workshop, say), hence array ops rather than overwriting a
+// single field — updateSpeaker's plain merge would otherwise clobber any
+// other sessions this speaker is already linked to.
+export async function addSpeakerToSession(speakerId: string, sessionId: string): Promise<void> {
+  await updateDocById(col, speakerId, { sessionIds: arrayUnion(sessionId) })
+}
+
+export async function removeSpeakerFromSession(speakerId: string, sessionId: string): Promise<void> {
+  await updateDocById(col, speakerId, { sessionIds: arrayRemove(sessionId) })
 }
 
 export async function listVisibleSpeakers(): Promise<Speaker[]> {

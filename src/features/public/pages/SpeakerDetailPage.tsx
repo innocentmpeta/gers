@@ -22,7 +22,7 @@ export default function SpeakerDetailPage() {
   const [photo, setPhoto] = useState<MediaAsset | null>(null)
   const [presentation, setPresentation] = useState<MediaAsset | null>(null)
   const [org, setOrg] = useState<PartnerProfile | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
+  const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,16 +35,16 @@ export default function SpeakerDetailPage() {
         return
       }
       setSpeaker(found)
-      const [photoAsset, presentationAsset, orgProfile, sessionDoc] = await Promise.all([
+      const [photoAsset, presentationAsset, orgProfile, sessionDocs] = await Promise.all([
         found.photoMediaId ? getMediaAsset(found.photoMediaId) : Promise.resolve(null),
         found.presentationMediaId ? getMediaAsset(found.presentationMediaId) : Promise.resolve(null),
         found.userId ? getPartnerByUserId(found.userId) : Promise.resolve(null),
-        found.sessionId ? getSession(found.sessionId) : Promise.resolve(null),
+        found.sessionIds?.length ? Promise.all(found.sessionIds.map((sid) => getSession(sid))) : Promise.resolve([]),
       ])
       setPhoto(photoAsset)
       setPresentation(presentationAsset)
       setOrg(orgProfile && orgProfile.visible ? orgProfile : null)
-      setSession(sessionDoc)
+      setSessions(sessionDocs.filter((s): s is Session => s !== null))
       setLoading(false)
     })
   }, [id])
@@ -114,12 +114,16 @@ export default function SpeakerDetailPage() {
         </div>
       )}
 
-      {session && (
+      {sessions.length > 0 && (
         <div className="mt-8 rounded-md border border-sand-200 p-4">
           <p className="text-sm text-slate-500">Speaking in</p>
-          <Link to="/symposium/programme" className="text-ink-800 underline">
-            {session.title}
-          </Link>
+          <div className="flex flex-col gap-1">
+            {sessions.map((session) => (
+              <Link key={session.id} to="/symposium/programme" className="text-ink-800 underline">
+                {session.title}
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
