@@ -105,6 +105,30 @@ export async function completeInviteRegistration(
   })
 }
 
+// Same shape completeInviteRegistration produces, but for the admin
+// bulk-account-provisioning path (Accounts & Roles CSV import) which
+// creates the account and registration directly instead of waiting for the
+// invitee to click an emailed link — used when email delivery can't be
+// relied on. No inviteId, since there's no Invite doc in this path.
+export async function adminProvisionRegistration(
+  userId: string,
+  symposiumId: string,
+  participationRole: ParticipationRole,
+  attendanceMode: AttendanceMode
+): Promise<string> {
+  const now = new Date().toISOString()
+  return createDoc<Registration>(col, {
+    userId,
+    symposiumId,
+    attendanceMode,
+    participationRole,
+    status: 'approved',
+    confirmationStatus: attendanceMode === 'face_to_face' ? 'unconfirmed' : 'confirmed',
+    createdAt: now,
+    updatedAt: now,
+  })
+}
+
 // Each field also accepts a FieldValue (deleteField()) for a genuine clear —
 // omitUndefined only skips undefined keys, it can't un-set an existing one.
 type RegistrationUpdate = { [K in keyof Registration]?: Registration[K] | FieldValue }

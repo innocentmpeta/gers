@@ -53,7 +53,13 @@ service cloud.firestore {
         || canAccounts()
         || canRegistrations()
         || (isSignedIn() && resource.data.showInDirectory == true);
-      allow create: if isOwner(userId) && request.resource.data.systemRole == null;
+      // canAccounts() branch: an admin provisioning a full account+profile
+      // directly (Accounts & Roles bulk CSV import) — used when email
+      // delivery can't be relied on, so the account is created outright
+      // with a temp password instead of via the invite-link flow. Still
+      // forces systemRole null here; granting one goes through setUserSystemRole
+      // (the update rule), not this create path.
+      allow create: if (isOwner(userId) || canAccounts()) && request.resource.data.systemRole == null;
       // Granting a systemRole to yourself is otherwise impossible (the create
       // rule above forces it null) — the one exception is completing an
       // invite that a super admin already approved for this exact role,

@@ -6,6 +6,7 @@ import { listAllUsers, setUserSystemRole, deleteUserProfile } from '../../../lib
 import { listRegistrations, adminCreateAttendeeRegistration, deleteRegistration } from '../../../lib/firestore/registrations'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import { useAuth } from '../../../lib/auth'
+import { adminCreateAccountAndRegistration } from '../../../lib/adminAccountProvisioning'
 import type {
   AgeGroup,
   AttendanceMode,
@@ -176,6 +177,17 @@ type BulkRow = {
   errors: string[]
 }
 
+// 'created' (register=yes rows) hands back a temp password instead of
+// relying on Firebase's sign-in-link email, which institutional mail
+// filters have been silently dropping — see adminAccountProvisioning.ts.
+// 'sent' (register=no, systemRole-only rows) still goes through the
+// existing invite-link email, since that grant still needs a pending
+// Invite doc for the rules to allow it.
+type BulkResult =
+  | { status: 'created'; tempPassword: string }
+  | { status: 'sent' }
+  | { status: 'error'; message: string }
+
 function parseBulkRows(text: string): BulkRow[] {
   const table = parseCsv(text)
   if (table.length === 0) return []
@@ -233,13 +245,15 @@ function parseBulkRows(text: string): BulkRow[] {
 function mapError(err: unknown): string {
   const code = (err as { code?: string })?.code
   if (code === 'auth/invalid-email') return "That doesn't look like a valid email address."
+  if (code === 'auth/email-already-in-use') return 'An account with this email already exists.'
+  if (code === 'auth/weak-password') return 'Generated password was rejected as too weak — try again.'
   if (code === 'auth/unauthorized-continue-uri') {
     return "This domain isn't authorized for sign-in links in the Firebase console yet."
   }
   if (code === 'auth/operation-not-allowed') {
     return 'Passwordless email sign-in is disabled for this project — enable "Email link (passwordless sign-in)" under Authentication > Sign-in method > Email/Password in the Firebase console, then try again.'
   }
-  return 'Could not send the invite — please try again.'
+  return 'Could not complete this row — please try again.'
 }
 
 function inviteSummary(invite: Invite): string {
@@ -270,7 +284,7 @@ export default function AdminAccounts() {
   const [bulkRows, setBulkRows] = useState<BulkRow[]>([])
   const [bulkFileName, setBulkFileName] = useState<string | null>(null)
   const [bulkSubmitting, setBulkSubmitting] = useState(false)
-  const [bulkResults, setBulkResults] = useState<Map<number, 'sent' | string>>(new Map())
+  const [bulkResults, setBulkResults] = useState<Map<number, BulkResult>>(new Map())
 
   async function load() {
     const [inv, allUsers, sym, regs] = await Promise.all([
@@ -352,32 +366,50 @@ export default function AdminAccounts() {
   async function handleBulkSubmit() {
     if (!profile) return
     setBulkSubmitting(true)
-    const results = new Map<number, 'sent' | string>()
+    const results = new Map<number, BulkResult>()
     for (let i = 0; i < bulkRows.length; i++) {
       const row = bulkRows[i]
       if (row.errors.length > 0) continue
       try {
-        await createInvite({
-          email: row.email,
-          salutation: row.salutation,
-          name: row.name,
-          surname: row.surname,
-          organization: row.organization,
-          jobTitle: row.jobTitle,
-          sector: row.sector,
-          gender: row.gender,
-          ageGroup: row.ageGroup,
-          whatsappNumber: row.whatsappNumber,
-          systemRole: row.systemRole,
-          registerAsAttendee: row.register,
-          participationRole: row.register ? row.role : undefined,
-          attendanceMode: row.register ? (row.inviteInPerson ? 'face_to_face' : 'online') : undefined,
-          invitedBy: profile.id,
-        })
-        await sendSignInLinkToEmail(auth, row.email, actionCodeSettingsFor(row.email))
-        results.set(i, 'sent')
+        if (row.register) {
+          if (!symposium) throw new Error('No symposium configured')
+          const { tempPassword } = await adminCreateAccountAndRegistration({
+            email: row.email,
+            salutation: row.salutation,
+            name: row.name,
+            surname: row.surname,
+            organization: row.organization,
+            jobTitle: row.jobTitle,
+            sector: row.sector,
+            gender: row.gender,
+            ageGroup: row.ageGroup,
+            whatsappNumber: row.whatsappNumber,
+            symposiumId: symposium.id,
+            participationRole: row.role,
+            attendanceMode: row.inviteInPerson ? 'face_to_face' : 'online',
+          })
+          results.set(i, { status: 'created', tempPassword })
+        } else {
+          await createInvite({
+            email: row.email,
+            salutation: row.salutation,
+            name: row.name,
+            surname: row.surname,
+            organization: row.organization,
+            jobTitle: row.jobTitle,
+            sector: row.sector,
+            gender: row.gender,
+            ageGroup: row.ageGroup,
+            whatsappNumber: row.whatsappNumber,
+            systemRole: row.systemRole,
+            registerAsAttendee: false,
+            invitedBy: profile.id,
+          })
+          await sendSignInLinkToEmail(auth, row.email, actionCodeSettingsFor(row.email))
+          results.set(i, { status: 'sent' })
+        }
       } catch (err) {
-        results.set(i, mapError(err))
+        results.set(i, { status: 'error', message: mapError(err) })
       }
       setBulkResults(new Map(results))
     }
@@ -652,6 +684,13 @@ export default function AdminAccounts() {
           <code>inviteInPerson</code> accept yes/no or 1/0. <code>role</code> defaults to "Invited
           participant" when left blank.
         </p>
+        <p className="mt-1 text-sm text-slate-500">
+          Rows with <code>register</code> = yes get their account and registration created
+          immediately, with a generated temporary password shown below to copy and send yourself
+          (no automated email — safe to use while institutional email delivery is unreliable).
+          Rows with <code>register</code> = no (a role grant only) still go out as an emailed
+          sign-in link.
+        </p>
         <input
           type="file"
           accept=".csv,text/csv"
@@ -691,10 +730,25 @@ export default function AdminAccounts() {
                         <td className="px-3 py-2">
                           {row.errors.length > 0 ? (
                             <span className="text-red-600">{row.errors.join('; ')}</span>
-                          ) : result === 'sent' ? (
+                          ) : result?.status === 'created' ? (
+                            <span className="flex items-center gap-2 text-green-600">
+                              Account created — temp password: <code>{result.tempPassword}</code>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigator.clipboard.writeText(
+                                    `Email: ${row.email}\nTemporary password: ${result.tempPassword}\n\nLog in at ${window.location.origin}/login`
+                                  )
+                                }
+                                className="text-ink-800 underline"
+                              >
+                                Copy
+                              </button>
+                            </span>
+                          ) : result?.status === 'sent' ? (
                             <span className="text-green-600">Sent</span>
-                          ) : result ? (
-                            <span className="text-red-600">{result}</span>
+                          ) : result?.status === 'error' ? (
+                            <span className="text-red-600">{result.message}</span>
                           ) : (
                             <span className="text-slate-400">Ready</span>
                           )}
@@ -711,7 +765,9 @@ export default function AdminAccounts() {
               disabled={bulkSubmitting || bulkRows.every((r) => r.errors.length > 0)}
               className="mt-3 self-start rounded-full bg-ink-800 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
             >
-              {bulkSubmitting ? 'Sending invites…' : `Send ${bulkRows.filter((r) => r.errors.length === 0).length} invites`}
+              {bulkSubmitting
+                ? 'Processing…'
+                : `Process ${bulkRows.filter((r) => r.errors.length === 0).length} rows`}
             </button>
           </>
         )}
