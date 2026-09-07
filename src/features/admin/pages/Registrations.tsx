@@ -15,7 +15,7 @@ import {
 import { listUsersByIds } from '../../../lib/firestore/users'
 import { getDefaultSymposium, updateCapacitySettings } from '../../../lib/firestore/symposia'
 import { formatSymposiumDay } from '../../../lib/symposiumDays'
-import { copyToClipboard } from '../../../lib/clipboard'
+import CopyableMessageBox from '../../../components/CopyableMessageBox'
 import type { AttendanceDayChoice, ConfirmationStatus, Registration, Symposium, User } from '../../../types/models'
 
 // Suggested body for the organiser's own manual email — unlike a brand-new
@@ -221,7 +221,7 @@ export default function AdminRegistrations() {
   const [editingLogisticsId, setEditingLogisticsId] = useState<string | null>(null)
   const [logisticsDraft, setLogisticsDraft] = useState<LogisticsDraft | null>(null)
   const [saving, setSaving] = useState(false)
-  const [messageCopiedId, setMessageCopiedId] = useState<string | null>(null)
+  const [expandedRsvpMessageId, setExpandedRsvpMessageId] = useState<string | null>(null)
 
   async function load() {
     const s = await getDefaultSymposium()
@@ -252,13 +252,11 @@ export default function AdminRegistrations() {
 
   async function handleInvite(id: string) {
     await inviteToAttendInPerson(id)
-    const registration = registrations.find((r) => r.id === id)
-    const user = registration ? users.get(registration.userId) : undefined
-    if (user && symposium) {
-      await copyToClipboard(rsvpMessageFor(user, symposium.name))
-      setMessageCopiedId(id)
-      setTimeout(() => setMessageCopiedId((current) => (current === id ? null : current)), 5000)
-    }
+    // Show the message box right away rather than silently copying —
+    // clipboard writes can fail (or succeed) with no visible signal either
+    // way, so a visible, manually-selectable box is the only reliable
+    // confirmation that something actually happened.
+    setExpandedRsvpMessageId(id)
     load()
   }
 
@@ -383,10 +381,8 @@ export default function AdminRegistrations() {
                         .join(', ')}
                     </p>
                   )}
-                  {messageCopiedId === r.id && (
-                    <p className="mt-1 text-xs text-green-600">
-                      RSVP message copied — paste it into an email from your own inbox.
-                    </p>
+                  {expandedRsvpMessageId === r.id && user && symposium && (
+                    <CopyableMessageBox text={rsvpMessageFor(user, symposium.name)} />
                   )}
                 </div>
                 <div className="flex shrink-0 gap-3 text-sm">
@@ -409,14 +405,10 @@ export default function AdminRegistrations() {
                     <>
                       {r.confirmationStatus === 'unconfirmed' && user && symposium && (
                         <button
-                          onClick={async () => {
-                            await copyToClipboard(rsvpMessageFor(user, symposium.name))
-                            setMessageCopiedId(r.id)
-                            setTimeout(() => setMessageCopiedId((current) => (current === r.id ? null : current)), 5000)
-                          }}
+                          onClick={() => setExpandedRsvpMessageId(expandedRsvpMessageId === r.id ? null : r.id)}
                           className="text-ink-800 underline"
                         >
-                          Copy RSVP message
+                          {expandedRsvpMessageId === r.id ? 'Hide RSVP message' : 'Show RSVP message'}
                         </button>
                       )}
                       <button onClick={() => handleUninvite(r.id)} className="text-red-600 underline">

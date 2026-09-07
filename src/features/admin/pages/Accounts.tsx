@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { sendSignInLinkToEmail } from 'firebase/auth'
 import { auth } from '../../../lib/firebase'
-import { createInvite, listInvites, deleteInvite } from '../../../lib/firestore/invites'
+import { listInvites, deleteInvite } from '../../../lib/firestore/invites'
 import { listAllUsers, setUserSystemRole, deleteUserProfile } from '../../../lib/firestore/users'
 import { listRegistrations, adminCreateAttendeeRegistration, deleteRegistration } from '../../../lib/firestore/registrations'
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import { useAuth } from '../../../lib/auth'
 import { adminCreateAccountAndRegistration } from '../../../lib/adminAccountProvisioning'
-import { copyToClipboard } from '../../../lib/clipboard'
+import CopyableMessageBox from '../../../components/CopyableMessageBox'
 import type {
   AgeGroup,
   AttendanceMode,
@@ -178,16 +178,12 @@ type BulkRow = {
   errors: string[]
 }
 
-// 'created' (register=yes rows) hands back a temp password instead of
-// relying on Firebase's sign-in-link email, which institutional mail
-// filters have been silently dropping — see adminAccountProvisioning.ts.
-// 'sent' (register=no, systemRole-only rows) still goes through the
-// existing invite-link email, since that grant still needs a pending
-// Invite doc for the rules to allow it.
-type BulkResult =
-  | { status: 'created'; tempPassword: string }
-  | { status: 'sent' }
-  | { status: 'error'; message: string }
+// Every row hands back a temp password instead of relying on Firebase's
+// sign-in-link email — institutional mail filters have been silently
+// dropping it, and passwordless links also require the current domain to
+// be authorized in the Firebase console, which dev/preview domains aren't.
+// See adminAccountProvisioning.ts.
+type BulkResult = { status: 'created'; tempPassword: string } | { status: 'error'; message: string }
 
 function parseBulkRows(text: string): BulkRow[] {
   const table = parseCsv(text)
@@ -261,11 +257,9 @@ function downloadCredentialsCsv(rows: BulkRow[], results: Map<number, BulkResult
     const status =
       result?.status === 'created'
         ? 'Account created'
-        : result?.status === 'sent'
-          ? 'Invite emailed'
-          : result?.status === 'error'
-            ? `Error: ${result.message}`
-            : 'Not processed'
+        : result?.status === 'error'
+          ? `Error: ${result.message}`
+          : 'Not processed'
     const password = result?.status === 'created' ? result.tempPassword : ''
     lines.push(
       [
@@ -295,14 +289,14 @@ function downloadCredentialsCsv(rows: BulkRow[], results: Map<number, BulkResult
 // filters have been unreliable for the latter. Gives real context (who,
 // why, what happens next) rather than a bare credential+link, which reads
 // too much like a phishing template on its own.
-function inviteMessageFor(row: BulkRow, tempPassword: string, symposiumName: string): string {
+function inviteMessageFor(name: string, email: string, tempPassword: string, symposiumName: string): string {
   return `Subject: You're invited to ${symposiumName}
 
-Hi ${row.name},
+Hi ${name},
 
 You've been invited to ${symposiumName}. We've created an account for you — here are your sign-in details:
 
-Email: ${row.email}
+Email: ${email}
 Temporary password: ${tempPassword}
 
 Log in at ${window.location.origin}/login, and once you're in you'll be able to confirm which days you'll attend and let us know your dietary preferences.
@@ -338,7 +332,9 @@ export default function AdminAccounts() {
   const [draft, setDraft] = useState<Draft>(EMPTY)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [justInvited, setJustInvited] = useState<string | null>(null)
+  const [justInvited, setJustInvited] = useState<{ name: string; email: string; tempPassword: string } | null>(
+    null
+  )
   const [invites, setInvites] = useState<Invite[]>([])
   const [resendingId, setResendingId] = useState<string | null>(null)
 
@@ -353,6 +349,8 @@ export default function AdminAccounts() {
   const [bulkFileName, setBulkFileName] = useState<string | null>(null)
   const [bulkSubmitting, setBulkSubmitting] = useState(false)
   const [bulkResults, setBulkResults] = useState<Map<number, BulkResult>>(new Map())
+  const [expandedMessageRow, setExpandedMessageRow] = useState<number | null>(null)
+  const [showInviteMessage, setShowInviteMessage] = useState(false)
 
   async function load() {
     const [inv, allUsers, sym, regs] = await Promise.all([
@@ -381,8 +379,9 @@ export default function AdminAccounts() {
     setSending(true)
     setError(null)
     setJustInvited(null)
+    setShowInviteMessage(false)
     try {
-      await createInvite({
+      const { tempPassword } = await adminCreateAccountAndRegistration({
         email: draft.email,
         salutation: draft.salutation || undefined,
         name: draft.name,
@@ -394,13 +393,16 @@ export default function AdminAccounts() {
         ageGroup: draft.ageGroup || undefined,
         whatsappNumber: draft.whatsappNumber || undefined,
         systemRole: draft.systemRole || undefined,
-        registerAsAttendee: draft.registerAsAttendee,
-        participationRole: draft.registerAsAttendee ? draft.participationRole : undefined,
-        attendanceMode: draft.registerAsAttendee ? draft.attendanceMode : undefined,
-        invitedBy: profile.id,
+        registration:
+          draft.registerAsAttendee && symposium
+            ? {
+                symposiumId: symposium.id,
+                participationRole: draft.participationRole,
+                attendanceMode: draft.attendanceMode,
+              }
+            : undefined,
       })
-      await sendSignInLinkToEmail(auth, draft.email, actionCodeSettingsFor(draft.email))
-      setJustInvited(draft.email)
+      setJustInvited({ name: draft.name, email: draft.email, tempPassword })
       setDraft(EMPTY)
       await load()
     } catch (err) {
@@ -429,6 +431,7 @@ export default function AdminAccounts() {
     setBulkFileName(file.name)
     setBulkRows(parseBulkRows(text))
     setBulkResults(new Map())
+    setExpandedMessageRow(null)
   }
 
   async function handleBulkSubmit() {
@@ -439,43 +442,28 @@ export default function AdminAccounts() {
       const row = bulkRows[i]
       if (row.errors.length > 0) continue
       try {
-        if (row.register) {
-          if (!symposium) throw new Error('No symposium configured')
-          const { tempPassword } = await adminCreateAccountAndRegistration({
-            email: row.email,
-            salutation: row.salutation,
-            name: row.name,
-            surname: row.surname,
-            organization: row.organization,
-            jobTitle: row.jobTitle,
-            sector: row.sector,
-            gender: row.gender,
-            ageGroup: row.ageGroup,
-            whatsappNumber: row.whatsappNumber,
-            symposiumId: symposium.id,
-            participationRole: row.role,
-            attendanceMode: row.inviteInPerson ? 'face_to_face' : 'online',
-          })
-          results.set(i, { status: 'created', tempPassword })
-        } else {
-          await createInvite({
-            email: row.email,
-            salutation: row.salutation,
-            name: row.name,
-            surname: row.surname,
-            organization: row.organization,
-            jobTitle: row.jobTitle,
-            sector: row.sector,
-            gender: row.gender,
-            ageGroup: row.ageGroup,
-            whatsappNumber: row.whatsappNumber,
-            systemRole: row.systemRole,
-            registerAsAttendee: false,
-            invitedBy: profile.id,
-          })
-          await sendSignInLinkToEmail(auth, row.email, actionCodeSettingsFor(row.email))
-          results.set(i, { status: 'sent' })
-        }
+        const { tempPassword } = await adminCreateAccountAndRegistration({
+          email: row.email,
+          salutation: row.salutation,
+          name: row.name,
+          surname: row.surname,
+          organization: row.organization,
+          jobTitle: row.jobTitle,
+          sector: row.sector,
+          gender: row.gender,
+          ageGroup: row.ageGroup,
+          whatsappNumber: row.whatsappNumber,
+          systemRole: row.systemRole,
+          registration:
+            row.register && symposium
+              ? {
+                  symposiumId: symposium.id,
+                  participationRole: row.role,
+                  attendanceMode: row.inviteInPerson ? 'face_to_face' : 'online',
+                }
+              : undefined,
+        })
+        results.set(i, { status: 'created', tempPassword })
       } catch (err) {
         results.set(i, { status: 'error', message: mapError(err) })
       }
@@ -549,8 +537,10 @@ export default function AdminAccounts() {
       <h1 className="text-3xl">Accounts &amp; Roles</h1>
       <p className="mt-2 text-sm text-slate-500">
         Invite someone who can't self-register — a new organiser account, a VIP, an invited expert —
-        with a role and/or attendance already set. They get a passwordless sign-in link by email;
-        completing it creates their account automatically.
+        with a role and/or attendance already set. Their account is created immediately with a
+        generated temporary password (shown below to copy and send yourself) rather than an
+        automated email — institutional mail filters have been unreliable, and passwordless
+        sign-in links also require this exact domain to be authorized in the Firebase console.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3 rounded-lg border border-sand-200 bg-white p-5">
@@ -734,14 +724,39 @@ export default function AdminAccounts() {
           </p>
         )}
         {error && <p className="text-sm text-red-600">{error}</p>}
-        {justInvited && <p className="text-sm text-green-600">Invite sent to {justInvited}.</p>}
+        {justInvited && (
+          <div className="text-sm text-green-600">
+            <div className="flex items-center gap-3">
+              <span>
+                Account created for {justInvited.email} — temp password: <code>{justInvited.tempPassword}</code>
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowInviteMessage((v) => !v)}
+                className="text-ink-800 underline"
+              >
+                {showInviteMessage ? 'Hide message' : 'Show invite message'}
+              </button>
+            </div>
+            {showInviteMessage && (
+              <CopyableMessageBox
+                text={inviteMessageFor(
+                  justInvited.name,
+                  justInvited.email,
+                  justInvited.tempPassword,
+                  symposium?.name ?? 'the symposium'
+                )}
+              />
+            )}
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={sending || !formValid}
           className="mt-2 self-start rounded-full bg-ink-800 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
         >
-          {sending ? 'Sending…' : 'Send invite'}
+          {sending ? 'Creating account…' : 'Create account'}
         </button>
       </form>
 
@@ -753,11 +768,11 @@ export default function AdminAccounts() {
           participant" when left blank.
         </p>
         <p className="mt-1 text-sm text-slate-500">
-          Rows with <code>register</code> = yes get their account and registration created
-          immediately, with a generated temporary password shown below to copy and send yourself
-          (no automated email — safe to use while institutional email delivery is unreliable).
-          Rows with <code>register</code> = no (a role grant only) still go out as an emailed
-          sign-in link.
+          Every row's account is created immediately, with a generated temporary password shown
+          below to copy and send yourself (no automated email — institutional mail filters have
+          been unreliable, and passwordless sign-in links require this exact domain to be
+          authorized in the Firebase console). Rows with <code>register</code> = yes also get a
+          symposium registration created at the same time.
         </p>
         <input
           type="file"
@@ -787,41 +802,51 @@ export default function AdminAccounts() {
                   {bulkRows.map((row, i) => {
                     const result = bulkResults.get(i)
                     return (
-                      <tr key={i} className={row.errors.length > 0 ? 'bg-red-50' : undefined}>
-                        <td className="px-3 py-2">{row.email || '—'}</td>
-                        <td className="px-3 py-2">
-                          {row.name} {row.surname}
-                        </td>
-                        <td className="px-3 py-2">{row.register ? 'Yes' : 'No'}</td>
-                        <td className="px-3 py-2">{row.register ? ROLE_LABEL[row.role] : '—'}</td>
-                        <td className="px-3 py-2">{row.inviteInPerson ? 'Yes' : 'No'}</td>
-                        <td className="px-3 py-2">
-                          {row.errors.length > 0 ? (
-                            <span className="text-red-600">{row.errors.join('; ')}</span>
-                          ) : result?.status === 'created' ? (
-                            <span className="flex items-center gap-2 text-green-600">
-                              Account created — temp password: <code>{result.tempPassword}</code>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  copyToClipboard(
-                                    inviteMessageFor(row, result.tempPassword, symposium?.name ?? 'the symposium')
-                                  )
-                                }
-                                className="text-ink-800 underline"
-                              >
-                                Copy invite message
-                              </button>
-                            </span>
-                          ) : result?.status === 'sent' ? (
-                            <span className="text-green-600">Sent</span>
-                          ) : result?.status === 'error' ? (
-                            <span className="text-red-600">{result.message}</span>
-                          ) : (
-                            <span className="text-slate-400">Ready</span>
-                          )}
-                        </td>
-                      </tr>
+                      <Fragment key={i}>
+                        <tr className={row.errors.length > 0 ? 'bg-red-50' : undefined}>
+                          <td className="px-3 py-2">{row.email || '—'}</td>
+                          <td className="px-3 py-2">
+                            {row.name} {row.surname}
+                          </td>
+                          <td className="px-3 py-2">{row.register ? 'Yes' : 'No'}</td>
+                          <td className="px-3 py-2">{row.register ? ROLE_LABEL[row.role] : '—'}</td>
+                          <td className="px-3 py-2">{row.inviteInPerson ? 'Yes' : 'No'}</td>
+                          <td className="px-3 py-2">
+                            {row.errors.length > 0 ? (
+                              <span className="text-red-600">{row.errors.join('; ')}</span>
+                            ) : result?.status === 'created' ? (
+                              <span className="flex items-center gap-2 text-green-600">
+                                Account created — temp password: <code>{result.tempPassword}</code>
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedMessageRow(expandedMessageRow === i ? null : i)}
+                                  className="text-ink-800 underline"
+                                >
+                                  {expandedMessageRow === i ? 'Hide message' : 'Show invite message'}
+                                </button>
+                              </span>
+                            ) : result?.status === 'error' ? (
+                              <span className="text-red-600">{result.message}</span>
+                            ) : (
+                              <span className="text-slate-400">Ready</span>
+                            )}
+                          </td>
+                        </tr>
+                        {result?.status === 'created' && expandedMessageRow === i && (
+                          <tr>
+                            <td colSpan={6} className="bg-sand-50 px-3 py-2">
+                              <CopyableMessageBox
+                                text={inviteMessageFor(
+                                  row.name,
+                                  row.email,
+                                  result.tempPassword,
+                                  symposium?.name ?? 'the symposium'
+                                )}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     )
                   })}
                 </tbody>

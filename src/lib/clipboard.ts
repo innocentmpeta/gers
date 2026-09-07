@@ -1,11 +1,12 @@
-// navigator.clipboard.writeText can fail without any visible error in some
-// browser/security contexts — window.prompt is a blunt but universally
-// reliable fallback: the browser pre-selects the text in the dialog, so
-// Cmd/Ctrl+C always works from there regardless of Clipboard API support.
+// Best-effort only — navigator.clipboard.writeText can fail (or succeed)
+// without any reliable signal either way across browsers, so this silently
+// swallows errors. Callers should pair this with a visible, manually
+// selectable fallback (see CopyableMessageBox) rather than depend on this
+// working or on the user noticing whether it did.
 export async function copyToClipboard(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text)
   } catch {
-    window.prompt('Clipboard access was blocked — copy this manually:', text)
+    // No visible fallback here on purpose — see CopyableMessageBox.
   }
 }
