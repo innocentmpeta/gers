@@ -7,6 +7,7 @@ import { listRegistrations, adminCreateAttendeeRegistration, deleteRegistration 
 import { getDefaultSymposium } from '../../../lib/firestore/symposia'
 import { useAuth } from '../../../lib/auth'
 import { adminCreateAccountAndRegistration } from '../../../lib/adminAccountProvisioning'
+import { copyToClipboard } from '../../../lib/clipboard'
 import type {
   AgeGroup,
   AttendanceMode,
@@ -287,6 +288,26 @@ function downloadCredentialsCsv(rows: BulkRow[], results: Map<number, BulkResult
   a.download = `gers-invite-credentials-${new Date().toISOString().slice(0, 10)}.csv`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+// Suggested body for the organiser's own manual email — sent from their
+// trusted mailbox rather than noreply@gers.org.za, since institutional spam
+// filters have been unreliable for the latter. Gives real context (who,
+// why, what happens next) rather than a bare credential+link, which reads
+// too much like a phishing template on its own.
+function inviteMessageFor(row: BulkRow, tempPassword: string, symposiumName: string): string {
+  return `Subject: You're invited to ${symposiumName}
+
+Hi ${row.name},
+
+You've been invited to ${symposiumName}. We've created an account for you — here are your sign-in details:
+
+Email: ${row.email}
+Temporary password: ${tempPassword}
+
+Log in at ${window.location.origin}/login, and once you're in you'll be able to confirm which days you'll attend and let us know your dietary preferences.
+
+We'd suggest changing your password after your first login (there's an option for that on your account page).`
 }
 
 function mapError(err: unknown): string {
@@ -778,8 +799,19 @@ export default function AdminAccounts() {
                           {row.errors.length > 0 ? (
                             <span className="text-red-600">{row.errors.join('; ')}</span>
                           ) : result?.status === 'created' ? (
-                            <span className="text-green-600">
+                            <span className="flex items-center gap-2 text-green-600">
                               Account created — temp password: <code>{result.tempPassword}</code>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  copyToClipboard(
+                                    inviteMessageFor(row, result.tempPassword, symposium?.name ?? 'the symposium')
+                                  )
+                                }
+                                className="text-ink-800 underline"
+                              >
+                                Copy invite message
+                              </button>
                             </span>
                           ) : result?.status === 'sent' ? (
                             <span className="text-green-600">Sent</span>

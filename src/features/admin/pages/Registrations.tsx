@@ -15,7 +15,19 @@ import {
 import { listUsersByIds } from '../../../lib/firestore/users'
 import { getDefaultSymposium, updateCapacitySettings } from '../../../lib/firestore/symposia'
 import { formatSymposiumDay } from '../../../lib/symposiumDays'
+import { copyToClipboard } from '../../../lib/clipboard'
 import type { AttendanceDayChoice, ConfirmationStatus, Registration, Symposium, User } from '../../../types/models'
+
+// Suggested body for the organiser's own manual email — unlike a brand-new
+// account, this person already has their own password, so there's nothing
+// to share except a nudge to log back in and RSVP.
+function rsvpMessageFor(user: User, symposiumName: string): string {
+  return `Subject: Please confirm your attendance — ${symposiumName}
+
+Hi ${user.name},
+
+You're invited to attend ${symposiumName} in person. Please log in to your existing account at ${window.location.origin}/login to confirm which days you'll attend and your dietary preferences.`
+}
 
 const DAY_CHOICE_LABEL: Record<AttendanceDayChoice, string> = {
   face_to_face: 'In-person',
@@ -209,6 +221,7 @@ export default function AdminRegistrations() {
   const [editingLogisticsId, setEditingLogisticsId] = useState<string | null>(null)
   const [logisticsDraft, setLogisticsDraft] = useState<LogisticsDraft | null>(null)
   const [saving, setSaving] = useState(false)
+  const [messageCopiedId, setMessageCopiedId] = useState<string | null>(null)
 
   async function load() {
     const s = await getDefaultSymposium()
@@ -239,6 +252,13 @@ export default function AdminRegistrations() {
 
   async function handleInvite(id: string) {
     await inviteToAttendInPerson(id)
+    const registration = registrations.find((r) => r.id === id)
+    const user = registration ? users.get(registration.userId) : undefined
+    if (user && symposium) {
+      await copyToClipboard(rsvpMessageFor(user, symposium.name))
+      setMessageCopiedId(id)
+      setTimeout(() => setMessageCopiedId((current) => (current === id ? null : current)), 5000)
+    }
     load()
   }
 
@@ -363,6 +383,11 @@ export default function AdminRegistrations() {
                         .join(', ')}
                     </p>
                   )}
+                  {messageCopiedId === r.id && (
+                    <p className="mt-1 text-xs text-green-600">
+                      RSVP message copied — paste it into an email from your own inbox.
+                    </p>
+                  )}
                 </div>
                 <div className="flex shrink-0 gap-3 text-sm">
                   {r.status === 'pending_approval' && (
@@ -381,9 +406,23 @@ export default function AdminRegistrations() {
                     </button>
                   )}
                   {r.attendanceMode === 'face_to_face' && (
-                    <button onClick={() => handleUninvite(r.id)} className="text-red-600 underline">
-                      Revoke invitation
-                    </button>
+                    <>
+                      {r.confirmationStatus === 'unconfirmed' && user && symposium && (
+                        <button
+                          onClick={async () => {
+                            await copyToClipboard(rsvpMessageFor(user, symposium.name))
+                            setMessageCopiedId(r.id)
+                            setTimeout(() => setMessageCopiedId((current) => (current === r.id ? null : current)), 5000)
+                          }}
+                          className="text-ink-800 underline"
+                        >
+                          Copy RSVP message
+                        </button>
+                      )}
+                      <button onClick={() => handleUninvite(r.id)} className="text-red-600 underline">
+                        Revoke invitation
+                      </button>
+                    </>
                   )}
                   {r.status === 'approved' && (
                     <select
