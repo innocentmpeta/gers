@@ -242,6 +242,53 @@ function parseBulkRows(text: string): BulkRow[] {
   })
 }
 
+function toCsvField(value: string): string {
+  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+}
+
+// A downloadable file survives a closed tab/table in a way the in-page
+// "Copy" button never reliably did (clipboard writes can fail silently,
+// and this whole panel disappears on refresh/nav) — this is the organiser's
+// durable record of who got what temporary password, to build their own
+// manual emails from afterward.
+function downloadCredentialsCsv(rows: BulkRow[], results: Map<number, BulkResult>) {
+  const header = ['Email', 'Name', 'Surname', 'Role', 'Attendance', 'Status', 'Temporary Password']
+  const lines = [header.map(toCsvField).join(',')]
+  rows.forEach((row, i) => {
+    if (row.errors.length > 0) return
+    const result = results.get(i)
+    const status =
+      result?.status === 'created'
+        ? 'Account created'
+        : result?.status === 'sent'
+          ? 'Invite emailed'
+          : result?.status === 'error'
+            ? `Error: ${result.message}`
+            : 'Not processed'
+    const password = result?.status === 'created' ? result.tempPassword : ''
+    lines.push(
+      [
+        row.email,
+        row.name,
+        row.surname,
+        row.register ? ROLE_LABEL[row.role] : '—',
+        row.register ? (row.inviteInPerson ? 'Face to face' : 'Online') : '—',
+        status,
+        password,
+      ]
+        .map(toCsvField)
+        .join(',')
+    )
+  })
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `gers-invite-credentials-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function mapError(err: unknown): string {
   const code = (err as { code?: string })?.code
   if (code === 'auth/invalid-email') return "That doesn't look like a valid email address."
@@ -731,19 +778,8 @@ export default function AdminAccounts() {
                           {row.errors.length > 0 ? (
                             <span className="text-red-600">{row.errors.join('; ')}</span>
                           ) : result?.status === 'created' ? (
-                            <span className="flex items-center gap-2 text-green-600">
+                            <span className="text-green-600">
                               Account created — temp password: <code>{result.tempPassword}</code>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  navigator.clipboard.writeText(
-                                    `Email: ${row.email}\nTemporary password: ${result.tempPassword}\n\nLog in at ${window.location.origin}/login`
-                                  )
-                                }
-                                className="text-ink-800 underline"
-                              >
-                                Copy
-                              </button>
                             </span>
                           ) : result?.status === 'sent' ? (
                             <span className="text-green-600">Sent</span>
@@ -759,16 +795,33 @@ export default function AdminAccounts() {
                 </tbody>
               </table>
             </div>
-            <button
-              type="button"
-              onClick={handleBulkSubmit}
-              disabled={bulkSubmitting || bulkRows.every((r) => r.errors.length > 0)}
-              className="mt-3 self-start rounded-full bg-ink-800 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
-            >
-              {bulkSubmitting
-                ? 'Processing…'
-                : `Process ${bulkRows.filter((r) => r.errors.length === 0).length} rows`}
-            </button>
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleBulkSubmit}
+                disabled={bulkSubmitting || bulkRows.every((r) => r.errors.length > 0)}
+                className="self-start rounded-full bg-ink-800 px-5 py-2.5 text-sm font-medium text-sand-50 hover:bg-ink-700 disabled:opacity-60"
+              >
+                {bulkSubmitting
+                  ? 'Processing…'
+                  : `Process ${bulkRows.filter((r) => r.errors.length === 0).length} rows`}
+              </button>
+              {bulkResults.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => downloadCredentialsCsv(bulkRows, bulkResults)}
+                  className="self-start rounded-full border border-ink-800 px-5 py-2.5 text-sm font-medium text-ink-800 hover:bg-ink-800 hover:text-sand-50"
+                >
+                  Download credentials CSV
+                </button>
+              )}
+            </div>
+            {bulkResults.size > 0 && (
+              <p className="mt-2 text-xs text-slate-400">
+                Download this before leaving the page — temporary passwords aren't shown again once
+                you navigate away.
+              </p>
+            )}
           </>
         )}
       </div>
