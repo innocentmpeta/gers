@@ -2,7 +2,15 @@ import { useState } from 'react'
 import { listRegistrations } from '../../../lib/firestore/registrations'
 import { listAbstractSubmissions } from '../../../lib/firestore/abstractSubmissions'
 import { listUsersByIds } from '../../../lib/firestore/users'
-import type { AbstractSubmission, Registration, User } from '../../../types/models'
+import { getDefaultSymposium } from '../../../lib/firestore/symposia'
+import { getSymposiumDays } from '../../../lib/symposiumDays'
+import type { AbstractSubmission, AttendanceDayChoice, Registration, User } from '../../../types/models'
+
+const DAY_CHOICE_LABEL: Record<AttendanceDayChoice, string> = {
+  face_to_face: 'In-person',
+  online: 'Online',
+  none: 'None',
+}
 
 function csvCell(value: unknown): string {
   const s = value == null ? '' : String(value)
@@ -29,7 +37,12 @@ function download(filename: string, content: string) {
   URL.revokeObjectURL(url)
 }
 
-function registrationRow(r: Registration, u: User | undefined): Record<string, unknown> {
+function registrationRow(r: Registration, u: User | undefined, days: string[]): Record<string, unknown> {
+  const dayColumns: Record<string, unknown> = {}
+  for (const day of days) {
+    const choice = r.attendanceDays?.[day]
+    dayColumns[`attendance_${day}`] = choice ? DAY_CHOICE_LABEL[choice] : ''
+  }
   return {
     name: u?.name ?? '',
     surname: u?.surname ?? '',
@@ -45,6 +58,7 @@ function registrationRow(r: Registration, u: User | undefined): Record<string, u
     status: r.status,
     confirmationStatus: r.confirmationStatus,
     mealPreference: r.mealPreference ?? '',
+    ...dayColumns,
     registrationAmountPaid: r.registrationAmountPaid ?? '',
     accommodationPaid: r.accommodationPaid ?? '',
     mealAmount: r.mealAmount ?? '',
@@ -74,9 +88,10 @@ export default function AdminExport() {
   async function exportRegistrations() {
     setBusy('registrations')
     try {
-      const registrations = await listRegistrations()
+      const [registrations, symposium] = await Promise.all([listRegistrations(), getDefaultSymposium()])
       const users = await listUsersByIds(registrations.map((r) => r.userId))
-      const rows = registrations.map((r) => registrationRow(r, users.get(r.userId)))
+      const days = symposium ? getSymposiumDays(symposium) : []
+      const rows = registrations.map((r) => registrationRow(r, users.get(r.userId), days))
       download(`registrations-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows))
     } finally {
       setBusy(null)

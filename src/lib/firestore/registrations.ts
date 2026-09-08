@@ -1,6 +1,6 @@
-import { doc, runTransaction, deleteField, type FieldValue, type Transaction } from 'firebase/firestore'
+import { doc, runTransaction, deleteField, increment, type FieldValue, type Transaction } from 'firebase/firestore'
 import { db } from '../firebase'
-import { where, orderBy, listWhere, createDoc, updateDocById, removeDoc, omitUndefined } from './crud'
+import { where, orderBy, listWhere, getById, createDoc, updateDocById, removeDoc, omitUndefined } from './crud'
 import type {
   AttendanceDayChoice,
   AttendanceMode,
@@ -48,7 +48,7 @@ async function hasPriorApproval(userId: string): Promise<boolean> {
 export async function createDefaultRegistration(userId: string, symposiumId: string): Promise<string> {
   const now = new Date().toISOString()
   const autoApprove = await hasPriorApproval(userId)
-  return createDoc<Registration>(col, {
+  const id = await createDoc<Registration>(col, {
     userId,
     symposiumId,
     attendanceMode: 'online',
@@ -58,6 +58,13 @@ export async function createDefaultRegistration(userId: string, symposiumId: str
     createdAt: now,
     updatedAt: now,
   })
+  // Only counted once actually approved — a first-time (non-auto-approved)
+  // registrant's confirmationStatus is already 'confirmed' here despite
+  // being pending review, so counting now would double-count (or never
+  // decrement) if the pending registration is later rejected. See
+  // approveRegistration, which counts this case at the point of approval.
+  if (autoApprove) await adjustCounter(symposiumId, 'online', 1)
+  return id
 }
 
 // Admin-initiated — for the Accounts & Roles "register for conference
@@ -67,7 +74,7 @@ export async function createDefaultRegistration(userId: string, symposiumId: str
 // is the one adding them; same shape a returning attendee's sign-up gets.
 export async function adminCreateAttendeeRegistration(userId: string, symposiumId: string): Promise<string> {
   const now = new Date().toISOString()
-  return createDoc<Registration>(col, {
+  const id = await createDoc<Registration>(col, {
     userId,
     symposiumId,
     attendanceMode: 'online',
@@ -77,6 +84,8 @@ export async function adminCreateAttendeeRegistration(userId: string, symposiumI
     createdAt: now,
     updatedAt: now,
   })
+  await adjustCounter(symposiumId, 'online', 1)
+  return id
 }
 
 // The registration a completed invite produces — role/mode come straight
@@ -92,7 +101,7 @@ export async function completeInviteRegistration(
   invite: Invite & { participationRole: ParticipationRole; attendanceMode: AttendanceMode }
 ): Promise<string> {
   const now = new Date().toISOString()
-  return createDoc<Registration>(col, {
+  const id = await createDoc<Registration>(col, {
     userId,
     symposiumId,
     inviteId: invite.id,
@@ -103,6 +112,8 @@ export async function completeInviteRegistration(
     createdAt: now,
     updatedAt: now,
   })
+  if (invite.attendanceMode !== 'face_to_face') await adjustCounter(symposiumId, invite.attendanceMode, 1)
+  return id
 }
 
 // Same shape completeInviteRegistration produces, but for the admin
@@ -117,7 +128,7 @@ export async function adminProvisionRegistration(
   attendanceMode: AttendanceMode
 ): Promise<string> {
   const now = new Date().toISOString()
-  return createDoc<Registration>(col, {
+  const id = await createDoc<Registration>(col, {
     userId,
     symposiumId,
     attendanceMode,
@@ -127,6 +138,8 @@ export async function adminProvisionRegistration(
     createdAt: now,
     updatedAt: now,
   })
+  if (attendanceMode !== 'face_to_face') await adjustCounter(symposiumId, attendanceMode, 1)
+  return id
 }
 
 // Each field also accepts a FieldValue (deleteField()) for a genuine clear —
@@ -138,7 +151,17 @@ export async function updateRegistration(id: string, data: RegistrationUpdate): 
 }
 
 export async function approveRegistration(id: string, approvedBy: string): Promise<void> {
+  const existing = await getById<Registration>(col, id)
   await updateRegistration(id, { status: 'approved', approvedBy, approvedAt: new Date().toISOString() })
+  // Only the first-time pending-registration path (createDefaultRegistration
+  // with autoApprove false) reaches here with confirmationStatus already
+  // 'confirmed' but never counted — every other creation path is already
+  // 'approved' from the start and counts itself at creation time. Checking
+  // the pre-update status keeps this idempotent if approve is ever called
+  // twice on an already-approved registration.
+  if (existing?.status === 'pending_approval' && existing.confirmationStatus === 'confirmed') {
+    await adjustCounter(existing.symposiumId, existing.attendanceMode, 1)
+  }
 }
 
 export async function rejectRegistration(id: string, approvedBy: string): Promise<void> {
@@ -160,7 +183,18 @@ export async function deleteRegistration(id: string): Promise<void> {
 }
 
 export async function withdrawRegistration(id: string): Promise<void> {
+  const existing = await getById<Registration>(col, id)
   await updateRegistration(id, { status: 'withdrawn' })
+  // Release whatever seat this registration was counted under — a
+  // 'confirmed' or 'offered' registration occupies a counted slot for its
+  // current attendanceMode; withdrawing frees it, same as declining an
+  // offer or being un-invited does elsewhere in this file.
+  if (
+    existing?.status === 'approved' &&
+    (existing.confirmationStatus === 'confirmed' || existing.confirmationStatus === 'offered')
+  ) {
+    await adjustCounter(existing.symposiumId, existing.attendanceMode, -1)
+  }
 }
 
 // ---- capacity helpers ----
@@ -211,6 +245,16 @@ function bumpCounter(tx: Transaction, symposiumId: string, symposium: Symposium,
   tx.update(symRef(symposiumId), omitUndefined({ [field]: Math.max(0, current + delta) }))
 }
 
+// Non-transactional counterpart to bumpCounter, for the registration-
+// creation functions below that aren't already inside a transaction.
+// Firestore's atomic increment() FieldValue avoids the read-modify-write
+// race a plain "read current, write current+1" would have here.
+async function adjustCounter(symposiumId: string, mode: AttendanceMode, delta: 1 | -1): Promise<void> {
+  const field = capField(mode)
+  if (!field) return
+  await updateDocById(symposiaCol, symposiumId, { [field]: increment(delta) })
+}
+
 // ---- attendee actions ----
 
 // Attempts to claim a seat in the registration's current attendanceMode.
@@ -224,16 +268,28 @@ export async function attemptConfirm(
   return runTransaction(db, async (tx) => {
     const { registration, symposium } = await loadPair(tx, registrationId, symposiumId)
     if (registration.status !== 'approved') throw new Error('Registration must be approved before confirming')
-    const mode = registration.attendanceMode
     const now = new Date().toISOString()
     const meal = mealPreference ?? registration.mealPreference
     const days = attendanceDays ?? registration.attendanceDays
+
+    // Someone invited to attend in person who opts every day to online/none
+    // has effectively declined the in-person invite, not just skipped a
+    // few days — treat them as an online attendee (correctly counted, and
+    // not holding a physical seat they're not using) rather than leaving
+    // attendanceMode stuck at 'face_to_face' with no in-person days at all.
+    const optedFullyOnline =
+      registration.attendanceMode === 'face_to_face' &&
+      days != null &&
+      Object.keys(days).length > 0 &&
+      Object.values(days).every((choice) => choice !== 'face_to_face')
+    const mode = optedFullyOnline ? 'online' : registration.attendanceMode
 
     if (hasRoom(symposium, mode)) {
       bumpCounter(tx, symposiumId, symposium, mode, 1)
       tx.update(
         regRef(registrationId),
         omitUndefined({
+          attendanceMode: mode,
           confirmationStatus: 'confirmed',
           confirmedAt: now,
           mealPreference: meal,
@@ -247,6 +303,7 @@ export async function attemptConfirm(
     tx.update(
       regRef(registrationId),
       omitUndefined({
+        attendanceMode: mode,
         confirmationStatus: 'waitlisted',
         waitlistedAt: now,
         offerExpiresAt: deleteField(),
@@ -510,6 +567,10 @@ export async function uninviteFromInPerson(registrationId: string, symposiumId: 
     const { registration, symposium } = await loadPair(tx, registrationId, symposiumId)
     const heldASeat = registration.confirmationStatus === 'confirmed' || registration.confirmationStatus === 'offered'
     if (heldASeat) bumpCounter(tx, symposiumId, symposium, 'face_to_face', -1)
+    // This always ends in a freshly-confirmed online registration below,
+    // regardless of whether a physical seat was held before — so the
+    // online counter always gains one, not just when heldASeat.
+    bumpCounter(tx, symposiumId, symposium, 'online', 1)
 
     const now = new Date().toISOString()
     tx.update(
