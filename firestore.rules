@@ -130,11 +130,16 @@ service cloud.firestore {
     // ---- registrations ----
     match /registrations/{registrationId} {
       allow read: if isOwner(resource.data.userId) || canRegistrations();
-      // Self-service creation can only ever produce a standard online
-      // public-participant registration, already 'confirmed' (no per-seat
-      // confirmation ceremony for online attendance) — every other role or
-      // attendance mode is organiser-assigned afterward, never self-selected
-      // at sign-up (project-docs meeting notes 2026-07-31).
+      // Self-service creation can only ever produce a standard face-to-face
+      // public-participant registration, 'unconfirmed' (same confirm + day-
+      // selection ceremony as any other in-person invite, see attemptConfirm
+      // in registrations.ts) — every other role or attendance mode is
+      // organiser-assigned afterward, never self-selected at sign-up
+      // (project-docs meeting notes 2026-07-31, revised 2026-09-11 to
+      // default self-registration to face-to-face instead of online).
+      // status may be 'approved' rather than 'pending_approval' for a
+      // returning attendee with a prior approval (hasPriorApproval in
+      // registrations.ts) skipping manual review.
       // Invite completion: the invite doc itself is the authorization — an
       // organiser already chose this role/mode when they sent it, so the
       // invitee's own first sign-in may create exactly that registration
@@ -149,10 +154,10 @@ service cloud.firestore {
       allow create: if canRegistrations()
         || (isSignedIn()
             && request.resource.data.userId == request.auth.uid
-            && request.resource.data.status == 'pending_approval'
-            && request.resource.data.attendanceMode == 'online'
+            && request.resource.data.status in ['pending_approval', 'approved']
+            && request.resource.data.attendanceMode == 'face_to_face'
             && request.resource.data.participationRole == 'public_participant'
-            && request.resource.data.confirmationStatus == 'confirmed')
+            && request.resource.data.confirmationStatus == 'unconfirmed')
         || (isSignedIn()
             && request.resource.data.userId == request.auth.uid
             && request.resource.data.status == 'approved'

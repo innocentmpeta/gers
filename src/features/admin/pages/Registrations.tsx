@@ -251,7 +251,9 @@ export default function AdminRegistrations() {
   }
 
   async function handleInvite(id: string) {
-    await inviteToAttendInPerson(id)
+    if (!symposium) return
+    const freedMode = await inviteToAttendInPerson(id, symposium.id)
+    if (freedMode) await promoteNextWaitlisted(symposium.id, freedMode)
     // Show the message box right away rather than silently copying —
     // clipboard writes can fail (or succeed) with no visible signal either
     // way, so a visible, manually-selectable box is the only reliable

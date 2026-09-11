@@ -43,28 +43,26 @@ async function hasPriorApproval(userId: string): Promise<boolean> {
 }
 
 // The only registration shape self-service sign-up can create — always
-// online/public_participant/confirmed, matching the create rule. Every
-// other role or attendance mode is assigned afterward by an organiser.
+// face_to_face/public_participant/unconfirmed, matching the create rule.
+// Defaulting to face-to-face (rather than online) reflects the in-person
+// event being the default expectation; the attendee goes through the same
+// confirm + day-selection step as any other in-person invite (see
+// attemptConfirm) before a physical seat is actually counted, and choosing
+// online for every day there flips them to an online registration
+// automatically. Every other role is assigned afterward by an organiser.
 export async function createDefaultRegistration(userId: string, symposiumId: string): Promise<string> {
   const now = new Date().toISOString()
   const autoApprove = await hasPriorApproval(userId)
-  const id = await createDoc<Registration>(col, {
+  return createDoc<Registration>(col, {
     userId,
     symposiumId,
-    attendanceMode: 'online',
+    attendanceMode: 'face_to_face',
     participationRole: 'public_participant',
     status: autoApprove ? 'approved' : 'pending_approval',
-    confirmationStatus: 'confirmed',
+    confirmationStatus: 'unconfirmed',
     createdAt: now,
     updatedAt: now,
   })
-  // Only counted once actually approved — a first-time (non-auto-approved)
-  // registrant's confirmationStatus is already 'confirmed' here despite
-  // being pending review, so counting now would double-count (or never
-  // decrement) if the pending registration is later rejected. See
-  // approveRegistration, which counts this case at the point of approval.
-  if (autoApprove) await adjustCounter(symposiumId, 'online', 1)
-  return id
 }
 
 // Admin-initiated — for the Accounts & Roles "register for conference
@@ -151,17 +149,7 @@ export async function updateRegistration(id: string, data: RegistrationUpdate): 
 }
 
 export async function approveRegistration(id: string, approvedBy: string): Promise<void> {
-  const existing = await getById<Registration>(col, id)
   await updateRegistration(id, { status: 'approved', approvedBy, approvedAt: new Date().toISOString() })
-  // Only the first-time pending-registration path (createDefaultRegistration
-  // with autoApprove false) reaches here with confirmationStatus already
-  // 'confirmed' but never counted — every other creation path is already
-  // 'approved' from the start and counts itself at creation time. Checking
-  // the pre-update status keeps this idempotent if approve is ever called
-  // twice on an already-approved registration.
-  if (existing?.status === 'pending_approval' && existing.confirmationStatus === 'confirmed') {
-    await adjustCounter(existing.symposiumId, existing.attendanceMode, 1)
-  }
 }
 
 export async function rejectRegistration(id: string, approvedBy: string): Promise<void> {
@@ -542,18 +530,38 @@ async function expireStaleOffersAndPromote(symposiumId: string): Promise<void> {
 
 // Resets confirmationStatus to 'unconfirmed' so the existing confirm +
 // meal-preference flow applies — inviting never claims a seat by itself.
+// Releases whatever seat the registration was previously holding (mirrors
+// uninviteFromInPerson's own release on the way back) — otherwise the old
+// mode's counter never decrements and permanently overcounts. Returns the
+// freed mode, if any, so the caller can promote its waitlist.
 // Deliberately never touches participationRole — "invited to attend in
 // person" is an attendance decision, orthogonal to who someone IS (public
 // participant, invited participant, presenter, facilitator...). Conflating
 // the two here used to silently overwrite a presenter's role, for instance
 // — see project-docs meeting notes 2026-08-21.
-export async function inviteToAttendInPerson(registrationId: string): Promise<void> {
-  await updateRegistration(registrationId, {
-    attendanceMode: 'face_to_face',
-    confirmationStatus: 'unconfirmed',
-    waitlistedAt: deleteField(),
-    offerExpiresAt: deleteField(),
-    previousConfirmedMode: deleteField(),
+export async function inviteToAttendInPerson(
+  registrationId: string,
+  symposiumId: string
+): Promise<AttendanceMode | null> {
+  return runTransaction(db, async (tx) => {
+    const { registration, symposium } = await loadPair(tx, registrationId, symposiumId)
+    const heldASeat = registration.confirmationStatus === 'confirmed' || registration.confirmationStatus === 'offered'
+    const freedMode = heldASeat ? registration.attendanceMode : null
+    if (freedMode) bumpCounter(tx, symposiumId, symposium, freedMode, -1)
+
+    const now = new Date().toISOString()
+    tx.update(
+      regRef(registrationId),
+      omitUndefined({
+        attendanceMode: 'face_to_face',
+        confirmationStatus: 'unconfirmed',
+        waitlistedAt: deleteField(),
+        offerExpiresAt: deleteField(),
+        previousConfirmedMode: deleteField(),
+        updatedAt: now,
+      })
+    )
+    return freedMode
   })
 }
 
